@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// Cada pessoa só acessa o próprio perfil, em usuarios/{uid}.
+// Nada mais no banco pode ser lido ou escrito pelo app.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /usuarios/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && perfilValido(request.resource.data);
+    }
+
+    function perfilValido(d) {
+      return d.keys().hasOnly(['nome', 'apelido', 'email', 'foto', 'criadoEm'])
+        && d.nome is string && d.nome.size() <= 120
+        && d.apelido is string && d.apelido.size() <= 60
+        && d.email is string && d.email.size() <= 254
+        // Foto opcional, no máximo 300 KB.
+        && (!('foto' in d) || d.foto == null || (d.foto is bytes && d.foto.size() <= 307200))
+        && (!('criadoEm' in d) || d.criadoEm is timestamp);
+    }
+
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}
