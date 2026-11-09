@@ -161,12 +161,14 @@ class ContaFirebase implements Conta {
     try {
       return await fn();
     } on FirebaseAuthException catch (e) {
+      debugPrint('Conta (auth): ${e.code} ${e.message}');
       throw _mensagemAuth(e.code, senhaAtual: senhaAtual);
     } on FirebaseException catch (e) {
+      debugPrint('Conta (${e.plugin}): ${e.code} ${e.message}');
       throw ErroConta(
         e.code == 'unavailable'
             ? 'Sem conexão com a internet. Tente de novo.'
-            : 'Não foi possível salvar agora. Tente de novo em instantes.',
+            : 'Não foi possível salvar agora. Tente de novo em instantes. (código: ${e.code})',
       );
     }
   }
@@ -202,7 +204,8 @@ class ContaFirebase implements Conta {
         'Já existe uma conta com este e-mail. Entre com e-mail e senha.',
       ),
       'operation-not-allowed' => const ErroConta('Este tipo de login ainda não foi ativado no Firebase.'),
-      _ => const ErroConta('Algo deu errado. Tente de novo em instantes.'),
+      // O código ajuda a identificar o problema se a pessoa avisar o suporte.
+      _ => ErroConta('Algo deu errado. Tente de novo em instantes. (código: $code)'),
     };
   }
 }

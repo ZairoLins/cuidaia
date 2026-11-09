@@ -74,6 +74,9 @@ class ChatController extends ChangeNotifier {
 
   final List<MensagemChat> mensagens = [];
   FaseChat fase = FaseChat.livre;
+
+  /// A última falha parece ser de rede (e não do serviço de IA): muda o aviso.
+  bool falhaDeRede = false;
   final List<Timer> _timers = [];
   bool _encerrado = false;
   int _geracao = 0;
@@ -194,6 +197,7 @@ class ChatController extends ChangeNotifier {
     } catch (e) {
       if (_encerrado || geracao != _geracao) return;
       debugPrint('Assistente falhou: $e');
+      falhaDeRede = _pareceRede(e);
       pergunta.falhou = true;
       fase = FaseChat.erro;
       _avisar();
@@ -235,4 +239,19 @@ class ChatController extends ChangeNotifier {
     encerrar();
     super.dispose();
   }
+}
+
+/// Erros de conexão (sem internet, tempo esgotado) contra erros do serviço
+/// (cota, proteção do App Check, resposta inválida).
+bool _pareceRede(Object e) {
+  if (e is TimeoutException) return true;
+  final s = '$e'.toLowerCase();
+  return [
+    'socketexception',
+    'network',
+    'failed to fetch',
+    'unavailable',
+    'connection',
+    'xmlhttprequest',
+  ].any(s.contains);
 }

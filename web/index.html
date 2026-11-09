@@ -1,46 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
+  <script>
+    // "cuidaia-41f74.web.app." (com ponto final, comum ao copiar um link de uma
+    // frase) é outro domínio para o login do Google e para o App Check.
+    if (location.hostname.endsWith('.')) {
+      location.replace(location.href.replace(location.hostname, location.hostname.replace(/\.+$/, '')));
+    }
+  </script>
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Entenda o SUS e saiba onde ser atendido, em linguagem simples.">
+  <meta name="theme-color" content="#137567">
 
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="cuidaia">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CuidaIA">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>cuidaia</title>
+  <title>CuidaIA</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; height: 100%; background: #F7F8F8; }
+    #carregando { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+                  justify-content: center; gap: 14px; font: 700 15px/1.4 system-ui, sans-serif; color: #4F5D68; }
+    #carregando img { width: 72px; height: 72px; border-radius: 16px; }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <!-- Aparece enquanto o app carrega (alguns segundos na primeira visita). -->
+  <div id="carregando" role="status">
+    <img src="icons/Icon-192.png" alt="">
+    <span>Carregando o CuidaIA…</span>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('carregando');
+      if (el) el.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

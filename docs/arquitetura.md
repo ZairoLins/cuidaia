@@ -136,5 +136,5 @@ validam campos e tamanhos.
    etc.) e precisam de revisão periódica. A data fica na tela Aprenda.
 7. **Conversas não ficam salvas.** É uma escolha de privacidade, mas a pessoa
    perde o histórico ao sair da conta.
-8. **Web e iOS** compilam, mas não foram testados nem configurados para
-   publicação. O foco é Android.
+8. **Web e iOS.** A versão web está publicada (Firebase Hosting), mas sem
+   notificações, que dependem do Android. O iOS compila, mas não foi testado.

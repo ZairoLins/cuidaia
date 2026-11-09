@@ -52,3 +52,9 @@ app.*.map.json
 
 # Saída do Gradle
 /android/build/
+
+# APK de avaliação (leva o token de avaliação embutido)
+/entrega/
+
+# Cache do deploy do Firebase Hosting
+.firebase/

@@ -182,7 +182,7 @@ class _Conversa extends StatelessWidget {
           MsgServico() => _CartaoServico(msg: m, chat: chat),
         },
       if (chat.fase == FaseChat.pensando) const _Pensando(),
-      if (chat.fase == FaseChat.erro) _ErroConexao(onTentar: chat.tentarDeNovo),
+      if (chat.fase == FaseChat.erro) _ErroConexao(rede: chat.falhaDeRede, onTentar: chat.tentarDeNovo),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -774,17 +774,20 @@ class _PensandoState extends State<_Pensando> with SingleTickerProviderStateMixi
 }
 
 class _ErroConexao extends StatelessWidget {
-  const _ErroConexao({required this.onTentar});
+  const _ErroConexao({required this.rede, required this.onTentar});
 
+  final bool rede;
   final VoidCallback onTentar;
 
   @override
   Widget build(BuildContext context) {
     return Aviso(
       tipo: TipoAviso.erro,
-      icone: Icons.wifi_off_rounded,
-      titulo: 'Sem conexão.',
-      texto: 'Sua pergunta foi salva. Em emergência, ligue 192: a ligação funciona mesmo sem internet.',
+      icone: rede ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+      titulo: rede ? 'Sem conexão.' : 'O assistente não respondeu agora.',
+      texto: rede
+          ? 'Sua pergunta foi salva. Em emergência, ligue 192: a ligação funciona mesmo sem internet.'
+          : 'Sua pergunta foi salva. Tente de novo em instantes. Em emergência, ligue 192.',
       acao: Align(
         alignment: Alignment.centerLeft,
         child: BotaoCompacto('Tentar novamente', icone: Icons.refresh_rounded, destrutivo: true, onPressed: onTentar),

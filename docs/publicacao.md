@@ -11,7 +11,7 @@ O app **não foi publicado**. Este roteiro deixa tudo pronto para quando (e se) 
 | Chave de upload (release) | `android/app/upload-keystore.jks` + `android/key.properties` (**fora do git**) |
 | Pacote para a loja | `flutter build appbundle --release` → `build/app/outputs/bundle/release/app-release.aab` |
 | APK para avaliadores | `flutter build apk --release --split-per-abi` → use o `app-arm64-v8a-release.apk` |
-| Política de privacidade e exclusão de conta (páginas públicas) | `hosting/privacidade.html` (seção `#excluir-conta`) |
+| Política de privacidade e exclusão de conta (páginas públicas) | `web/privacidade.html` (seção `#excluir-conta`), publicada junto do app web |
 
 > **Faça backup da chave agora.** Copie `android/app/upload-keystore.jks` e
 > `android/key.properties` para um lugar seguro fora do computador (pendrive,

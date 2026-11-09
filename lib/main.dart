@@ -18,7 +18,7 @@ import 'state/app_state.dart';
 /// no código. Para usar outra: `--dart-define=RECAPTCHA_SITE_KEY=...`
 const _recaptchaWeb = String.fromEnvironment(
   'RECAPTCHA_SITE_KEY',
-  defaultValue: '6LdHtBAuAAAAAFOYknSOky7AyK-PpRU6taKdck05',
+  defaultValue: '6LdoEhguAAAAAEu_bGojbbP5SNRR8pVahQQH9m_L',
 );
 
 Future<void> main() async {
@@ -61,6 +61,7 @@ void _abrirLembrete(AppState estado, String payload) {
 /// navegador/aparelho e mostra no console. Nunca coloque o valor no código:
 /// `flutter run --dart-define=APP_CHECK_DEBUG_TOKEN=<token>`
 const _tokenDepuracao = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
+const _tokenAvaliacao = String.fromEnvironment('APP_CHECK_TOKEN_AVALIACAO');
 
 /// O App Check impede que outros apps usem a cota da IA do projeto.
 ///
@@ -69,17 +70,24 @@ const _tokenDepuracao = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
 /// e deve ser cadastrado em Firebase Console > App Check > Apps >
 /// Gerenciar tokens de depuração. Na versão publicada: Fraud Defense (web),
 /// Play Integrity (Android) e App Attest (iOS).
+///
+/// APK de avaliação (para a banca, fora da Play Store): o Play Integrity só
+/// aprova apps baixados da loja, então esse APK usa um token de depuração
+/// próprio, separado do de desenvolvimento, que pode ser revogado no console
+/// depois da avaliação: `--dart-define-from-file=app_check.avaliacao.local.json`.
 Future<void> _ativarAppCheck() async {
   final token = _tokenDepuracao.isEmpty ? null : _tokenDepuracao;
+  final depuracao = kDebugMode || _tokenAvaliacao.isNotEmpty;
+  final tokenUsado = _tokenAvaliacao.isNotEmpty ? _tokenAvaliacao : token;
   try {
     await FirebaseAppCheck.instance.activate(
       providerWeb: !kIsWeb
           ? null
-          : kDebugMode
-          ? WebDebugProvider(debugToken: token)
+          : depuracao
+          ? WebDebugProvider(debugToken: tokenUsado)
           : ReCaptchaEnterpriseProvider(_recaptchaWeb),
-      providerAndroid: kDebugMode ? AndroidDebugProvider(debugToken: token) : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode ? AppleDebugProvider(debugToken: token) : const AppleAppAttestProvider(),
+      providerAndroid: depuracao ? AndroidDebugProvider(debugToken: tokenUsado) : const AndroidPlayIntegrityProvider(),
+      providerApple: depuracao ? AppleDebugProvider(debugToken: tokenUsado) : const AppleAppAttestProvider(),
     );
   } catch (e) {
     debugPrint('App Check não ativado: $e');
