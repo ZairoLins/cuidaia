@@ -11,8 +11,16 @@
 //
 // Opções: --cenarios <csv>  --saida <csv>  --repeticoes <n>  --modelo <nome>  --pausa-ms <ms>
 //
+// O CSV de saída é gravado a cada execução. Se ele já existir, o roteiro retoma
+// de onde parou: reaproveita as execuções sem erro e só chama a API para as que
+// faltam. Assim uma cota esgotada não perde o que já foi feito, e uma mudança no
+// gabarito (`esperado`) recalcula as métricas sem chamar o modelo de novo.
+// Erros 429/500/503 são repetidos com espera; se a cota DIÁRIA acabar, o roteiro
+// para, salva e pede para rodar de novo depois.
+//
 // A chave fica só na variável de ambiente. Nunca grave a chave em arquivo do repositório.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -24,9 +32,8 @@ Future<void> main(List<String> args) async {
   final caminhoCenarios = op['cenarios'] ?? 'avaliacao/cenarios.csv';
   final repeticoes = int.parse(op['repeticoes'] ?? '1');
   final modelo = op['modelo'] ?? modeloPadrao;
-  final pausa = Duration(milliseconds: int.parse(op['pausa-ms'] ?? '4000'));
-  final carimbo = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '-');
-  final caminhoSaida = op['saida'] ?? 'avaliacao/resultados_$carimbo.csv';
+  final pausa = Duration(milliseconds: int.parse(op['pausa-ms'] ?? '7000'));
+  final caminhoSaida = op['saida'] ?? 'avaliacao/resultados.csv';
 
   final chave = Platform.environment['GEMINI_API_KEY'];
   if (chave == null || chave.isEmpty) {
@@ -74,10 +81,40 @@ Future<void> main(List<String> args) async {
   ];
   final resultados = <({String esperado, String obtido})>[];
 
+  // Retomada: execuções sem erro de uma rodada anterior no mesmo arquivo.
+  final arquivoSaida = File(caminhoSaida);
+  final feitas = <String, List<String>>{};
+  if (arquivoSaida.existsSync()) {
+    final antigas = _lerCsv(arquivoSaida.readAsStringSync());
+    if (antigas.isNotEmpty) {
+      final cabA = antigas.removeAt(0).map((c) => c.trim()).toList();
+      final aId = cabA.indexOf('id'), aRep = cabA.indexOf('repeticao'), aObt = cabA.indexOf('obtido');
+      for (final l in antigas) {
+        if (l.length >= linhas.first.length && l[aObt] != 'erro') feitas['${l[aId]}#${l[aRep]}'] = l;
+      }
+    }
+    stdout.writeln('Retomando $caminhoSaida: ${feitas.length} execuções já feitas serão reaproveitadas.');
+  }
+
+  var cotaDiariaEsgotada = false;
+  externo:
   for (final c in cenarios) {
     for (var r = 1; r <= repeticoes; r++) {
       final texto = c[iTexto].trim();
       final esperado = c[iEsperado].trim();
+
+      final anterior = feitas['${c[iId]}#$r'];
+      if (anterior != null) {
+        final obtidoAnt = anterior[4];
+        final linha = [...anterior.take(linhas.first.length)];
+        linha[3] = esperado; // gabarito atual, caso tenha sido revisado
+        linha[5] = obtidoAnt == esperado ? 'sim' : 'nao';
+        linhas.add(linha);
+        resultados.add((esperado: esperado, obtido: obtidoAnt));
+        stdout.writeln('${c[iId]}#$r  esperado=$esperado  obtido=$obtidoAnt  (já feito)');
+        continue;
+      }
+
       var obtido = '', camada = '', justificativa = '', fonte = '', resposta = '', erro = '';
 
       switch (classificar(texto)) {
@@ -90,16 +127,24 @@ Future<void> main(List<String> args) async {
         case null:
           camada = 'IA';
           try {
-            final json = await _perguntar(http, chave, modelo, texto);
+            final json = await _perguntarComRetentativas(http, chave, modelo, texto);
             obtido = NivelSugerido.daChave(json['nivel'])?.chave ?? 'invalido';
             justificativa = '${json['justificativa'] ?? ''}';
             fonte = '${json['fonte'] ?? ''}';
             resposta = (json['paragrafos'] as List? ?? const []).join(' ');
+          } on _ErroHttp catch (e) {
+            obtido = 'erro';
+            erro = '$e';
+            cotaDiariaEsgotada = e.cotaDiaria;
           } catch (e) {
             obtido = 'erro';
             erro = '$e';
           }
-          await Future<void>.delayed(pausa); // respeita o limite da cota gratuita
+          if (cotaDiariaEsgotada) {
+            stdout.writeln('${c[iId]}#$r  cota diária da API esgotada: $erro');
+            break externo;
+          }
+          await Future<void>.delayed(pausa); // respeita o limite por minuto da cota gratuita
       }
 
       final acertou = obtido == esperado;
@@ -117,17 +162,101 @@ Future<void> main(List<String> args) async {
         resposta,
         erro,
       ]);
-      stdout.writeln('${c[iId]}#$r  esperado=$esperado  obtido=$obtido  ${acertou ? 'OK' : 'ERRO'}');
+      final marca = obtido == 'erro' ? 'FALHA NA API: ${_curto(erro)}' : (acertou ? 'OK' : 'divergente');
+      stdout.writeln('${c[iId]}#$r  esperado=$esperado  obtido=$obtido  $marca');
+      _gravar(arquivoSaida, linhas, feitas);
     }
   }
   http.close();
 
-  File(caminhoSaida)
+  _gravar(arquivoSaida, linhas, feitas);
+  stdout.writeln('\nResultados gravados em $caminhoSaida');
+  if (cotaDiariaEsgotada) {
+    stdout.writeln(
+      'A cota diária da Gemini API acabou. Rode o mesmo comando de novo depois que ela renovar: '
+      'o roteiro continua de onde parou.',
+    );
+    exitCode = 75;
+  }
+  stdout.writeln(_resumo(resultados));
+}
+
+/// Grava as execuções desta rodada e mantém as da rodada anterior que ainda
+/// não foram revisitadas (quando a rodada para no meio).
+void _gravar(File arquivo, List<List<String>> linhas, Map<String, List<String>> feitas) {
+  final vistas = linhas.skip(1).map((l) => '${l[0]}#${l[1]}').toSet();
+  final restantes = feitas.entries.where((e) => !vistas.contains(e.key)).map((e) => e.value);
+  final todas = [...linhas, ...restantes];
+  arquivo
     ..parent.createSync(recursive: true)
-    ..writeAsStringSync('﻿${linhas.map((l) => l.map(_campoCsv).join(',')).join('\r\n')}\r\n');
-  stdout
-    ..writeln('\nResultados gravados em $caminhoSaida')
-    ..writeln(_resumo(resultados));
+    ..writeAsStringSync('﻿${todas.map((l) => l.map(_campoCsv).join(',')).join('\r\n')}\r\n');
+}
+
+String _curto(String s) => s.length <= 160 ? s : '${s.substring(0, 160)}…';
+
+class _ErroHttp implements Exception {
+  _ErroHttp(this.status, String corpo) {
+    try {
+      final erro = (jsonDecode(corpo) as Map<String, dynamic>)['error'] as Map<String, dynamic>? ?? {};
+      resumo = '${erro['status'] ?? ''} ${erro['message'] ?? ''}'.trim();
+      for (final d in (erro['details'] as List? ?? const [])) {
+        if (d is! Map) continue;
+        final tipo = '${d['@type']}';
+        if (tipo.endsWith('RetryInfo')) {
+          final s = double.tryParse('${d['retryDelay']}'.replaceAll('s', ''));
+          if (s != null) espera = Duration(milliseconds: (s * 1000).ceil() + 1000);
+        }
+        if (tipo.endsWith('QuotaFailure')) {
+          for (final v in (d['violations'] as List? ?? const [])) {
+            if (v is Map && '${v['quotaId']}'.contains('PerDay')) cotaDiaria = true;
+          }
+        }
+      }
+    } catch (_) {
+      resumo = _curto(corpo);
+    }
+  }
+
+  final int status;
+  String resumo = '';
+  Duration? espera;
+  bool cotaDiaria = false;
+
+  bool get temporario => !cotaDiaria && (status == 429 || status == 500 || status == 503);
+
+  @override
+  String toString() => 'HTTP $status: $resumo';
+}
+
+/// Repete chamadas que falharam por limite por minuto ou instabilidade do
+/// servidor, esperando o tempo que a própria API indicar.
+Future<Map<String, dynamic>> _perguntarComRetentativas(
+  HttpClient http,
+  String chave,
+  String modelo,
+  String texto,
+) async {
+  const maxTentativas = 5;
+  var espera = const Duration(seconds: 15);
+  for (var tentativa = 1; ; tentativa++) {
+    try {
+      return await _perguntar(http, chave, modelo, texto);
+    } on _ErroHttp catch (e) {
+      if (!e.temporario || tentativa >= maxTentativas) rethrow;
+      final atraso = e.espera ?? espera;
+      stdout.writeln('    HTTP ${e.status}, nova tentativa em ${atraso.inSeconds}s ($tentativa/$maxTentativas)');
+      await Future<void>.delayed(atraso);
+    } on TimeoutException {
+      if (tentativa >= maxTentativas) rethrow;
+      stdout.writeln('    tempo esgotado, nova tentativa em ${espera.inSeconds}s ($tentativa/$maxTentativas)');
+      await Future<void>.delayed(espera);
+    } on SocketException {
+      if (tentativa >= maxTentativas) rethrow;
+      stdout.writeln('    falha de conexão, nova tentativa em ${espera.inSeconds}s ($tentativa/$maxTentativas)');
+      await Future<void>.delayed(espera);
+    }
+    espera *= 2;
+  }
 }
 
 Future<Map<String, dynamic>> _perguntar(HttpClient http, String chave, String modelo, String texto) async {
@@ -161,28 +290,32 @@ Future<Map<String, dynamic>> _perguntar(HttpClient http, String chave, String mo
   req.add(utf8.encode(jsonEncode(corpo)));
   final res = await req.close().timeout(const Duration(seconds: 60));
   final corpoRes = await res.transform(utf8.decoder).join();
-  if (res.statusCode != 200) throw HttpException('HTTP ${res.statusCode}: $corpoRes');
+  if (res.statusCode != 200) throw _ErroHttp(res.statusCode, corpoRes);
   final dados = jsonDecode(corpoRes) as Map<String, dynamic>;
   final texto0 = dados['candidates'][0]['content']['parts'][0]['text'] as String;
   return jsonDecode(texto0) as Map<String, dynamic>;
 }
 
-String _resumo(List<({String esperado, String obtido})> rs) {
+String _resumo(List<({String esperado, String obtido})> todos) {
   final b = StringBuffer();
+  // Falhas de API não são classificações: ficam fora das métricas.
+  final rs = todos.where((r) => r.obtido != 'erro').toList();
+  final falhas = todos.length - rs.length;
+  if (falhas > 0) b.writeln('Execuções com falha na API (fora das métricas): $falhas');
   final total = rs.length;
   final acertos = rs.where((r) => r.esperado == r.obtido).length;
   b.writeln('Acurácia: $acertos/$total (${_pct(acertos, total)})');
 
   final niveis = NivelSugerido.values.map((n) => n.chave).toList();
-  final colunas = [...niveis, 'sem_classificacao', 'invalido', 'erro'];
+  final colunas = [...niveis, 'sem_classificacao', 'invalido'];
   b.writeln('\nMatriz de confusão (linhas = esperado, colunas = obtido):');
-  b.writeln(['', ...colunas].map((c) => c.padRight(14)).join());
+  b.writeln(['', ...colunas].map((c) => c.padRight(18)).join());
   for (final e in niveis) {
     b.writeln(
       [
         e,
         ...colunas.map((o) => '${rs.where((r) => r.esperado == e && r.obtido == o).length}'),
-      ].map((c) => c.padRight(14)).join(),
+      ].map((c) => c.padRight(18)).join(),
     );
   }
 

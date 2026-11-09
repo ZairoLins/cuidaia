@@ -2,18 +2,60 @@ id,texto,esperado
 P01,Preciso renovar a receita do remédio de pressão que tomo há anos.,primaria
 P02,Meu filho fez 2 meses e quero saber quais vacinas ele precisa tomar.,primaria
 P03,Descobri que estou grávida e quero começar o pré-natal.,primaria
+P04,"Estou com tosse e coriza há três dias, mas sem febre. Preciso de atendimento?",primaria
+P05,"Quero fazer o preventivo, faz muito tempo que não faço.",primaria
+P06,Tenho diabetes e preciso acompanhar a glicose com um médico.,primaria
+P07,Quero tomar a vacina da gripe este ano.,primaria
+P08,Estou com uma dor leve nas costas há uma semana depois de carregar peso.,primaria
+P09,Quero fazer um teste rápido de HIV e sífilis.,primaria
+P10,Minha filha de 5 anos precisa de uma consulta de rotina para ver se está crescendo bem.,primaria
 S01,"O médico do posto disse que preciso passar com um cardiologista, como faço?",secundaria
 S02,O médico pediu uma endoscopia e não sei onde fazer esse exame.,secundaria
 S03,Meu filho tem otite que volta toda hora e precisa ser acompanhado por um otorrino.,secundaria
+S04,"A médica da UBS pediu uma ressonância do joelho, como consigo fazer esse exame?",secundaria
+S05,Tenho uma mancha na pele que está crescendo e a enfermeira disse que preciso ver um dermatologista.,secundaria
+S06,Estou enxergando cada vez pior e quero consultar um oftalmologista.,secundaria
+S07,O clínico do posto me encaminhou para o ortopedista por causa de uma dor no ombro que não melhora.,secundaria
+S08,"O médico da família pediu um ecocardiograma, como faço pelo SUS?",secundaria
+S09,Meu filho tem dificuldade na fala e a pediatra disse que ele precisa de fonoaudiólogo.,secundaria
+S10,Faço acompanhamento da pressão na UBS e o médico pediu para eu consultar um nefrologista por causa dos rins.,secundaria
 T01,Meu pai foi diagnosticado com câncer e vai precisar fazer quimioterapia.,terciaria
 T02,Minha mãe faz hemodiálise e entrou na fila para um transplante de rim.,terciaria
 T03,O cardiologista disse que vou precisar de uma cirurgia no coração.,terciaria
+T04,Minha avó precisa colocar uma prótese no quadril e o ortopedista disse que a cirurgia é feita em hospital de referência.,terciaria
+T05,Meu sobrinho nasceu com um problema no coração e vai precisar de cirurgia cardíaca infantil.,terciaria
+T06,Meu tio foi diagnosticado com leucemia e o hematologista falou em transplante de medula.,terciaria
+T07,Minha mãe vai começar radioterapia para tratar um tumor na mama.,terciaria
+T08,Meu irmão precisa de uma neurocirurgia para retirar um tumor no cérebro.,terciaria
+T09,O médico disse que minha filha vai precisar de implante coclear porque tem surdez profunda.,terciaria
+T10,Meu pai tem cirrose avançada e o médico colocou o nome dele na fila do transplante de fígado.,terciaria
 U01,Cortei a mão com uma faca na cozinha e o corte é fundo.,urgencia
 U02,Meu filho está com febre de 39 graus desde ontem e vomitou várias vezes.,urgencia
 U03,"Torci o tornozelo jogando bola, está muito inchado e não consigo pisar.",urgencia
+U04,Minha mãe está com falta de ar e os lábios ficaram roxos.,urgencia
+U05,Meu pai começou a falar enrolado e um lado do rosto ficou torto.,urgencia
+U06,Meu avô desmaiou no banheiro e bateu a cabeça.,urgencia
+U07,"Meu bebê de 3 meses está com febre alta e muito molinho, quase não quer mamar.",urgencia
+U08,Meu filho engoliu uma moeda e está tossindo sem parar.,urgencia
+U09,Fui picado por uma cobra no sítio e a perna está inchando.,urgencia
+U10,Estou com uma dor muito forte na barriga do lado direito há horas e com febre.,urgencia
 M01,Ando muito triste há meses e não tenho vontade de fazer nada.,psicossocial
 M02,Tenho crises de ansiedade quase todos os dias e não sei mais o que fazer.,psicossocial
 M03,Meu irmão está bebendo todos os dias e a família não sabe como ajudar.,psicossocial
+M04,Desde que perdi meu emprego não consigo dormir e choro todos os dias.,psicossocial
+M05,"Estou usando crack e quero parar, mas não consigo sozinho.",psicossocial
+M06,Minha filha adolescente parou de comer direito e vive isolada no quarto.,psicossocial
+M07,Tenho pensado em me machucar quando fico muito nervosa.,psicossocial
+M08,Escuto vozes que ninguém mais escuta e estou com medo.,psicossocial
+M09,"Meu pai bebe desde cedo e fica agressivo em casa, queremos ajuda para ele se tratar.",psicossocial
+M10,"Depois que minha mãe morreu, sinto um vazio enorme e não consigo voltar à rotina.",psicossocial
 N01,O que significa a sigla SUS?,nao_se_aplica
 N02,Qual a diferença entre a UBS e a UPA?,nao_se_aplica
 N03,Qual é a capital do Brasil?,nao_se_aplica
+N04,O que é atenção básica?,nao_se_aplica
+N05,Para que serve o Cartão SUS?,nao_se_aplica
+N06,Quem pode usar o SUS?,nao_se_aplica
+N07,Qual a diferença entre CAPS e UBS?,nao_se_aplica
+N08,Como funciona a regulação no SUS?,nao_se_aplica
+N09,Me recomenda um filme para assistir hoje?,nao_se_aplica
+N10,Quanto é 15 vezes 12?,nao_se_aplica

@@ -5,9 +5,10 @@ Material para o objetivo específico 4 do TCC: verificar se o nível de atençã
 ## Arquivos
 
 - `cenarios.csv` traz os cenários simulados, com as colunas `id`, `texto` e `esperado`.
-  - Os 18 cenários atuais são **exemplos** para testar o roteiro. O conjunto final, com 40 a 60 cenários, precisa ter o gabarito revisado por um profissional de saúde.
+  - São 60 cenários, 10 por nível. O gabarito precisa ser revisado por um profissional de saúde (ou pelo orientador) antes da rodada oficial.
+  - Três cenários (U04, U06 e M07) contêm palavras-chave de risco e são resolvidos pela primeira camada, sem chamar o modelo.
   - Valores aceitos em `esperado`: `primaria`, `secundaria`, `terciaria`, `urgencia`, `psicossocial`, `nao_se_aplica`.
-- `resultados_<data>.csv` é gerado a cada execução, com uma linha por cenário e repetição.
+- `resultados.csv` é gravado a cada execução, com uma linha por cenário e repetição (outro nome pode ser escolhido com `--saida`).
 
 ## Como rodar
 
@@ -24,7 +25,15 @@ O roteiro passa cada cenário pelas mesmas duas camadas do app:
 1. a triagem por palavras-chave (`lib/data/triagem.dart`);
 2. o Gemini, com a mesma instrução, o mesmo formato de resposta, o mesmo modelo e a mesma temperatura (`lib/data/instrucoes_assistente.dart`).
 
-Por padrão ele espera 4 s entre as chamadas, para respeitar a cota gratuita. Esse tempo pode ser ajustado com `--pausa-ms`.
+Por padrão ele espera 7 s entre as chamadas, para respeitar o limite por minuto da cota gratuita. Esse tempo pode ser ajustado com `--pausa-ms`.
+
+### Cota e retomada
+
+- Erros temporários (HTTP 429 por limite por minuto, 500 e 503) são repetidos até 5 vezes, com a espera que a própria API indicar.
+- Se a **cota diária** acabar, o roteiro para e salva o que já fez. Rode o mesmo comando depois que a cota renovar: ele reaproveita as execuções já gravadas em `resultados.csv` e só chama a API para as que faltam ou falharam.
+- Falhas de API aparecem como `obtido=erro` e ficam **fora** das métricas.
+- Depois de revisar o gabarito, rode o comando de novo: as métricas são recalculadas com o `esperado` atual, sem chamar o modelo.
+- Para começar do zero, apague `resultados.csv`.
 
 ## Métricas impressas
 
