@@ -1,4 +1,4 @@
-package com.example.cuidaia
+package br.com.cuidaia.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -31,22 +31,32 @@ class MsgOpcoes extends MensagemChat {
 }
 
 class MsgServico extends MensagemChat {
-  MsgServico(this.servico, {this.intro = ''});
+  MsgServico(this.servico, {this.intro = '', this.nivel, this.justificativa});
   final Servico servico;
   final String intro;
+
+  /// Preenchido quando o serviço foi sugerido pela IA (e não escolhido pela pessoa).
+  final NivelSugerido? nivel;
+  final String? justificativa;
+
+  bool get sugeridoPelaIA => nivel != null;
+
+  /// Já mostrou as outras opções a partir deste card.
+  bool outrasOpcoesAbertas = false;
 }
 
 /// Texto lido em voz alta para uma mensagem do assistente.
 String textoParaFala(MensagemChat m) {
   return switch (m) {
-    MsgServico(:final servico, :final intro) => [
-        intro,
-        '${servico.titulo}.',
-        servico.texto,
-        ...servico.lista,
-        servico.extra ?? '',
-        'Esta é uma orientação sobre serviços, não um diagnóstico.',
-      ].where((t) => t.isNotEmpty).join(' '),
+    MsgServico(:final servico, :final intro, :final justificativa) => [
+      intro,
+      justificativa ?? '',
+      '${servico.titulo}.',
+      servico.texto,
+      ...servico.lista,
+      servico.extra ?? '',
+      'Esta é uma orientação sobre serviços, não um diagnóstico.',
+    ].where((t) => t.isNotEmpty).join(' '),
     MsgResposta(:final resposta) => '${resposta.paragrafos.join(' ')} Fonte: ${resposta.fonte}.',
     _ => '',
   };
@@ -55,8 +65,7 @@ String textoParaFala(MensagemChat m) {
 /// Estados da conversa: vazia, enviada, processando, resposta,
 /// orientação de atendimento, alerta de emergência e falha de conexão.
 class ChatController extends ChangeNotifier {
-  ChatController({Assistente? assistente, this.aoNovaResposta})
-      : _assistente = assistente ?? const AssistenteLocal();
+  ChatController({Assistente? assistente, this.aoNovaResposta}) : _assistente = assistente ?? const AssistenteLocal();
 
   final Assistente _assistente;
 
@@ -65,6 +74,9 @@ class ChatController extends ChangeNotifier {
 
   final List<MensagemChat> mensagens = [];
   FaseChat fase = FaseChat.livre;
+
+  /// A última falha parece ser de rede (e não do serviço de IA): muda o aviso.
+  bool falhaDeRede = false;
   final List<Timer> _timers = [];
   bool _encerrado = false;
   int _geracao = 0;
@@ -95,8 +107,10 @@ class ChatController extends ChangeNotifier {
           );
         case Classificacao.mental:
           _entregar(
-            MsgServico(servicos['mental']!,
-                intro: 'Sinto muito que você esteja passando por isso. Você merece apoio agora.'),
+            MsgServico(
+              servicos['mental']!,
+              intro: 'Sinto muito que você esteja passando por isso. Você merece apoio agora.',
+            ),
             const Duration(milliseconds: 700),
           );
         case Classificacao.orientar:
@@ -122,6 +136,16 @@ class ChatController extends ChangeNotifier {
     _avisar();
     final atraso = Duration(milliseconds: opcao.chave == 'samu' ? 500 : 1200);
     _agendar(const Duration(milliseconds: 300), () => _entregar(MsgServico(servicos[opcao.chave]!), atraso));
+  }
+
+  /// A pessoa achou que a sugestão da IA não combina com a situação dela.
+  void verOutrasOpcoes(MsgServico sugestao) {
+    if (ocupado || sugestao.outrasOpcoesAbertas) return;
+    sugestao.outrasOpcoesAbertas = true;
+    mensagens.add(MsgUsuario('Quero ver outras opções'));
+    fase = FaseChat.enviada;
+    _avisar();
+    _agendar(const Duration(milliseconds: 300), () => _entregar(MsgOpcoes(), const Duration(milliseconds: 600)));
   }
 
   void tentarDeNovo() {
@@ -156,12 +180,24 @@ class ChatController extends ChangeNotifier {
       if (_encerrado || geracao != _geracao) return;
       final msg = MsgResposta(resposta);
       mensagens.add(msg);
+      final servico = resposta.servicoSugerido;
+      if (servico != null) {
+        mensagens.add(
+          MsgServico(
+            servico,
+            intro: 'Pelo que você contou, este parece ser o caminho mais adequado:',
+            nivel: resposta.nivel,
+            justificativa: resposta.justificativa,
+          ),
+        );
+      }
       fase = FaseChat.livre;
       _avisar();
       aoNovaResposta?.call(msg);
     } catch (e) {
       if (_encerrado || geracao != _geracao) return;
       debugPrint('Assistente falhou: $e');
+      falhaDeRede = _pareceRede(e);
       pergunta.falhou = true;
       fase = FaseChat.erro;
       _avisar();
@@ -180,9 +216,11 @@ class ChatController extends ChangeNotifier {
   }
 
   void _agendar(Duration atraso, VoidCallback fn) {
-    _timers.add(Timer(atraso, () {
-      if (!_encerrado) fn();
-    }));
+    _timers.add(
+      Timer(atraso, () {
+        if (!_encerrado) fn();
+      }),
+    );
   }
 
   void _cancelarTimers() {
@@ -201,4 +239,19 @@ class ChatController extends ChangeNotifier {
     encerrar();
     super.dispose();
   }
+}
+
+/// Erros de conexão (sem internet, tempo esgotado) contra erros do serviço
+/// (cota, proteção do App Check, resposta inválida).
+bool _pareceRede(Object e) {
+  if (e is TimeoutException) return true;
+  final s = '$e'.toLowerCase();
+  return [
+    'socketexception',
+    'network',
+    'failed to fetch',
+    'unavailable',
+    'connection',
+    'xmlhttprequest',
+  ].any(s.contains);
 }

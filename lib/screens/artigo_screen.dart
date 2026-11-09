@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/conteudos.dart';
+import '../services/links.dart';
 import '../state/app_state.dart';
 import '../theme/cuida_tema.dart';
 import '../widgets/widgets.dart';
@@ -12,9 +13,10 @@ enum SaidaArtigo { inicio, chat }
 /// Abre um artigo e trata o retorno ("Ir para o início" ou "Pergunte ao assistente").
 Future<void> abrirArtigo(BuildContext context, String topico) async {
   final shell = HomeShell.of(context);
-  final saida = await Navigator.of(context).push<SaidaArtigo>(
-    MaterialPageRoute(builder: (_) => ArtigoScreen(topico: topico)),
-  );
+  final artigo = artigos[topico];
+  if (artigo != null) AppScope.read(context).leituraIniciada(topico: topico, titulo: artigo.titulo);
+  final saida = await Navigator.of(context)
+      .push<SaidaArtigo>(MaterialPageRoute(builder: (_) => ArtigoScreen(topico: topico)));
   switch (saida) {
     case SaidaArtigo.inicio:
       shell.irPara(Aba.inicio);
@@ -36,139 +38,146 @@ class ArtigoScreen extends StatelessWidget {
     final estado = AppScope.of(context);
     final a = artigos[topico] ?? artigos['primaria']!;
     final salvo = estado.estaSalvo(a.topico);
+    final nivel = a.nivelAtivo.clamp(0, 2);
+    final importante = a.destaqueTitulo.toLowerCase().contains('importante');
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-              child: Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: CuidaCores.azul,
-                      minimumSize: const Size(0, 44),
-                      padding: const EdgeInsets.fromLTRB(6, 0, 14, 0),
-                      textStyle: t.sans(15, peso: FontWeight.w500),
-                    ),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                    label: const Text('Aprenda'),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    tooltip: salvo ? 'Remover dos salvos' : 'Salvar conteúdo',
-                    isSelected: salvo,
-                    color: CuidaCores.azul,
-                    onPressed: () => estado.alternarSalvo(a.topico),
-                    icon: const Icon(Icons.bookmark_border_rounded),
-                    selectedIcon: const Icon(Icons.bookmark_rounded),
-                  ),
-                  IconButton(
-                    tooltip: 'Ir para o início',
-                    color: CuidaCores.azul,
-                    onPressed: () => Navigator.pop(context, SaidaArtigo.inicio),
-                    icon: const Icon(Icons.home_outlined),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 48),
-                children: [
-                  Text('${a.categoria} · Conteúdo educativo',
-                      style: t.sans(13.5, peso: FontWeight.w600, cor: CuidaCores.verde700)),
-                  const SizedBox(height: 14),
-                  Semantics(header: true, child: Text(a.titulo, style: t.serif(34, lh: 39, tracking: -0.015))),
-                  const SizedBox(height: 14),
-                  Text(a.tempo, style: t.sans(13.5, cor: t.mut)),
-                  const SizedBox(height: 18),
-                  Text(a.lead, style: t.sans(20, lh: 29)),
-                  const SizedBox(height: 32),
-                  _DiagramaNivel(ativo: a.nivelAtivo, rotulo: a.diagramaRotulo),
-                  for (final s in a.secoes) ...[
-                    const SizedBox(height: 32),
-                    Semantics(header: true, child: Text(s.titulo, style: t.serif(24, lh: 29))),
-                    for (final p in s.paragrafos) ...[
-                      const SizedBox(height: 12),
-                      Text(p, style: t.sans(16.5, lh: 27)),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                  child: Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: CuidaCores.tinta,
+                          minimumSize: const Size(0, 44),
+                          padding: const EdgeInsets.fromLTRB(4, 0, 12, 0),
+                          shape: CuidaRaio.formaBotao,
+                          textStyle: t.sans(14.5, peso: FontWeight.w700),
+                        ),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 24),
+                        label: const Text('Aprenda'),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: salvo ? 'Remover dos salvos' : 'Salvar conteúdo',
+                        isSelected: salvo,
+                        color: CuidaCores.tinta,
+                        style: IconButton.styleFrom(shape: CuidaRaio.formaBotao),
+                        onPressed: () => estado.alternarSalvo(a.topico),
+                        icon: const Icon(Icons.bookmark_border_rounded, size: 21),
+                        selectedIcon: const Icon(Icons.bookmark_rounded, size: 21),
+                      ),
                     ],
-                    if (s.itens.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      ListaMarcadores(itens: s.itens),
-                    ],
-                  ],
-                  const SizedBox(height: 32),
-                  CartaoTint(
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  ),
+                ),
+                Expanded(
+                  // Guarda o progresso para o "Continue lendo". Perto do fim, conta
+                  // como lido e cancela o lembrete "Continuar leitura".
+                  child: NotificationListener<ScrollUpdateNotification>(
+                    onNotification: (n) {
+                      final m = n.metrics;
+                      if (n.depth != 0) return false;
+                      if (m.extentAfter < 400) {
+                        estado.registrarProgresso(a.topico, 1);
+                        estado.leituraConcluida(a.topico);
+                      } else if (m.maxScrollExtent > 0) {
+                        estado.registrarProgresso(a.topico, m.pixels / m.maxScrollExtent);
+                      }
+                      return false;
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
                       children: [
-                        Text(a.destaqueTitulo, style: t.sans(14, peso: FontWeight.w600, cor: CuidaCores.verdeTexto)),
-                        const SizedBox(height: 6),
-                        Text(a.destaque, style: t.serif(19, lh: 27, peso: FontWeight.w400)),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Selo(
+                            '${a.categoria} · ${a.tempo}',
+                            cor: CuidaCores.nivelTexto[nivel],
+                            fundo: CuidaCores.nivelFundo[nivel],
+                            forte: true,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Semantics(header: true, child: Text(a.titulo, style: t.titulo(24, lh: 30))),
+                        const SizedBox(height: 8),
+                        Text(a.lead, style: t.sans(16, lh: 25, cor: t.corpo)),
+                        const SizedBox(height: 22),
+                        _DiagramaNivel(ativo: nivel, rotulo: a.diagramaRotulo),
+                        for (final s in a.secoes) ...[
+                          const SizedBox(height: 22),
+                          Semantics(header: true, child: Text(s.titulo, style: t.titulo(17, lh: 24, tracking: 0))),
+                          for (final p in s.paragrafos) ...[
+                            const SizedBox(height: 8),
+                            Text(p, style: t.sans(15.5, lh: 24, cor: t.corpo)),
+                          ],
+                          if (s.itens.isNotEmpty) ...[const SizedBox(height: 8), ListaMarcadores(itens: s.itens)],
+                        ],
+                        const SizedBox(height: 22),
+                        Aviso(
+                          tipo: importante ? TipoAviso.alerta : TipoAviso.info,
+                          titulo: '${a.destaqueTitulo}.'.replaceAll('?.', '?').replaceAll('..', '.'),
+                          texto: a.destaque,
+                        ),
+                        const SizedBox(height: 22),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () => Navigator.pop(context, SaidaArtigo.chat),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: CuidaCores.acao,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(0, 44),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                shape: CuidaRaio.formaBotao,
+                                textStyle: t.sans(14.5, peso: FontWeight.w700),
+                              ),
+                              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+                              label: const Text('Perguntar ao assistente'),
+                            ),
+                            for (final r in a.refs)
+                              Semantics(
+                                link: true,
+                                hint: r.descricao,
+                                child: ChipCuida(
+                                  r.titulo.replaceFirst('Portaria GM/MS nº ', 'Portaria '),
+                                  iconeFim: Icons.north_east_rounded,
+                                  onPressed: () => abrirLink(context, r.url),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: BotaoLink(
+                            'Ir para o início',
+                            onPressed: () => Navigator.pop(context, SaidaArtigo.inicio),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Material(
-                    color: CuidaCores.azul,
-                    borderRadius: BorderRadius.circular(22),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () => Navigator.pop(context, SaidaArtigo.chat),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Ficou com alguma dúvida?', style: t.serif(19, cor: Colors.white)),
-                                  const SizedBox(height: 3),
-                                  Text('Pergunte ao assistente sobre este tema',
-                                      style: t.sans(13.5, lh: 19, cor: CuidaCores.sobreAzul)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: const BoxDecoration(color: CuidaCores.verde, shape: BoxShape.circle),
-                              child: const Icon(Icons.chat_bubble_outline_rounded,
-                                  size: 20, color: CuidaCores.tintaEscura),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Semantics(header: true, child: Text('Referências oficiais', style: t.serif(22))),
-                  const SizedBox(height: 12),
-                  for (final r in a.refs) LinkReferencia(referencia: r, vertical: 14),
-                  const SizedBox(height: 32),
-                  BotaoSecundario('Voltar para Aprenda', onPressed: () => Navigator.pop(context)),
-                  const SizedBox(height: 6),
-                  Center(
-                    child: BotaoLink('Ir para o início',
-                        tamanho: 15, onPressed: () => Navigator.pop(context, SaidaArtigo.inicio)),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// "Onde este nível se encaixa": Primária ⇄ Secundária ⇄ Terciária.
+/// "Onde este nível se encaixa": Primária ⇄ Secundária ⇄ Terciária, com o nível atual em petróleo.
 class _DiagramaNivel extends StatelessWidget {
   const _DiagramaNivel({required this.ativo, required this.rotulo});
 
@@ -180,16 +189,13 @@ class _DiagramaNivel extends StatelessWidget {
     final t = context.tema;
     const nomes = ['Primária', 'Secundária', 'Terciária'];
     return Cartao(
-      raio: 22,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+      raio: 12,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text('Onde este nível se encaixa', style: t.sans(14, peso: FontWeight.w600, cor: CuidaCores.azul)),
-          ),
-          const SizedBox(height: 14),
+          Text('ONDE ESTE NÍVEL SE ENCAIXA', semanticsLabel: 'Onde este nível se encaixa', style: t.legenda()),
+          const SizedBox(height: 12),
           Semantics(
             label: rotulo,
             excludeSemantics: true,
@@ -201,7 +207,7 @@ class _DiagramaNivel extends StatelessWidget {
                     const SizedBox(
                       width: 22,
                       height: 44,
-                      child: Icon(Icons.swap_horiz_rounded, size: 18, color: CuidaCores.verde700),
+                      child: Icon(Icons.swap_horiz_rounded, size: 18, color: CuidaCores.apoio),
                     ),
                   Expanded(
                     child: Column(
@@ -210,9 +216,9 @@ class _DiagramaNivel extends StatelessWidget {
                           height: 44,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: i == ativo ? CuidaCores.azul : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: CuidaCores.azul),
+                            color: i == ativo ? CuidaCores.petroleo : Colors.white,
+                            borderRadius: BorderRadius.circular(CuidaRaio.botao),
+                            border: i == ativo ? null : Border.all(color: t.borda, width: t.larguraBorda),
                           ),
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
@@ -220,16 +226,21 @@ class _DiagramaNivel extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 4),
                               child: Text(
                                 nomes[i],
-                                style: t.sans(12.5,
-                                    peso: FontWeight.w600, cor: i == ativo ? Colors.white : CuidaCores.azul),
+                                style: t.sans(
+                                  13,
+                                  peso: FontWeight.w800,
+                                  cor: i == ativo ? Colors.white : CuidaCores.tinta,
+                                ),
                               ),
                             ),
                           ),
                         ),
                         if (i == ativo) ...[
                           const SizedBox(height: 6),
-                          Text('Este conteúdo',
-                              style: t.sans(11.5, peso: FontWeight.w600, cor: CuidaCores.verdeTexto)),
+                          Text(
+                            'Este conteúdo',
+                            style: t.sans(11.5, peso: FontWeight.w700, cor: CuidaCores.acaoEscuro),
+                          ),
                         ],
                       ],
                     ),
@@ -237,12 +248,6 @@ class _DiagramaNivel extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text('Os serviços se comunicam nos dois sentidos: há encaminhamento e retorno.',
-                style: t.sans(13, lh: 19, cor: t.mut)),
           ),
         ],
       ),

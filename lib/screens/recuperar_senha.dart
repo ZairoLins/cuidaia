@@ -10,8 +10,8 @@ Future<void> mostrarRecuperarSenha(BuildContext context, {String email = ''}) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
-    barrierColor: CuidaCores.tintaEscura.withValues(alpha: 0.55),
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+    barrierColor: CuidaCores.tinta.withValues(alpha: 0.55),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(CuidaRaio.modal))),
     builder: (_) => _RecuperarSenha(emailInicial: email),
   );
 }
@@ -72,11 +72,11 @@ class _RecuperarSenhaState extends State<_RecuperarSenha> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: CuidaCores.borda, borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(color: CuidaCores.bordaCampo, borderRadius: BorderRadius.circular(999)),
                 ),
               ),
               const SizedBox(height: 14),
-              Semantics(header: true, child: Text('Recuperar senha', style: t.serif(26))),
+              Semantics(header: true, child: Text('Recuperar senha', style: t.titulo(26))),
               const SizedBox(height: 12),
               if (_enviado) ...[
                 Semantics(

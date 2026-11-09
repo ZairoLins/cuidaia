@@ -8,13 +8,13 @@ import '../services/links.dart';
 import '../theme/cuida_tema.dart';
 import 'botoes.dart';
 
-/// Cartão branco com sombra suave (contorno no alto contraste).
+/// Cartão branco com borda fina (#E2E7E9) e cantos de 14 px; sem sombra.
 class Cartao extends StatelessWidget {
   const Cartao({
     super.key,
     required this.child,
     this.padding = EdgeInsets.zero,
-    this.raio = 20,
+    this.raio = CuidaRaio.cartao,
     this.cor = Colors.white,
     this.onTap,
     this.sombra = true,
@@ -26,6 +26,8 @@ class Cartao extends StatelessWidget {
   final double raio;
   final Color cor;
   final VoidCallback? onTap;
+
+  /// Mantido por compatibilidade: `false` tira a borda padrão.
   final bool sombra;
   final BoxBorder? borda;
 
@@ -36,16 +38,110 @@ class Cartao extends StatelessWidget {
     Widget conteudo = Padding(padding: padding, child: child);
     if (onTap != null) conteudo = InkWell(onTap: onTap, borderRadius: br, child: conteudo);
     return Container(
-      decoration: BoxDecoration(borderRadius: br, boxShadow: sombra ? t.sombra() : null),
       foregroundDecoration: BoxDecoration(borderRadius: br, border: borda ?? (sombra ? t.contornoCartao : null)),
       child: Material(color: cor, borderRadius: br, clipBehavior: Clip.antiAlias, child: conteudo),
     );
   }
 }
 
-/// Cartão verde suave de destaque editorial (branco com contorno no alto contraste).
+/// Tipos de aviso do sistema: cada estado tem cor própria.
+enum TipoAviso {
+  sucesso(
+    CuidaCores.sucesso,
+    CuidaCores.sucessoFundo,
+    CuidaCores.sucessoLinha,
+    CuidaCores.sucessoTexto,
+    Icons.check_rounded,
+  ),
+  alerta(
+    CuidaCores.alerta,
+    CuidaCores.alertaFundo,
+    CuidaCores.alertaLinha,
+    CuidaCores.alertaTexto,
+    Icons.warning_amber_rounded,
+  ),
+  erro(CuidaCores.erro, CuidaCores.erroFundo, CuidaCores.erroLinha, CuidaCores.erroTexto, Icons.error_outline_rounded),
+  info(CuidaCores.info, CuidaCores.infoFundo, CuidaCores.infoLinha, CuidaCores.infoTexto, Icons.info_outline_rounded),
+  destaque(
+    CuidaCores.acao,
+    CuidaCores.verde50,
+    CuidaCores.verde100,
+    CuidaCores.acaoEscuro,
+    Icons.lightbulb_outline_rounded,
+  );
+
+  const TipoAviso(this.cor, this.fundo, this.linha, this.texto, this.icone);
+  final Color cor;
+  final Color fundo;
+  final Color linha;
+  final Color texto;
+  final IconData icone;
+}
+
+/// Aviso com ícone, fundo e borda do estado (cantos de 10 px).
+class Aviso extends StatelessWidget {
+  const Aviso({super.key, required this.tipo, required this.texto, this.titulo, this.icone, this.acao});
+
+  final TipoAviso tipo;
+  final String texto;
+
+  /// Começo em negrito (ex.: "Sucesso.").
+  final String? titulo;
+  final IconData? icone;
+  final Widget? acao;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tema;
+    final estilo = t.sans(14, lh: 21, cor: tipo.texto);
+    return Semantics(
+      liveRegion: tipo == TipoAviso.erro || tipo == TipoAviso.sucesso,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: t.altoContraste ? Colors.white : tipo.fundo,
+          borderRadius: BorderRadius.circular(CuidaRaio.botao),
+          border: Border.all(color: t.altoContraste ? CuidaCores.tinta : tipo.linha, width: t.altoContraste ? 1.5 : 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(icone ?? tipo.icone, size: 18, color: tipo.cor),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        if (titulo != null)
+                          TextSpan(
+                            text: '$titulo ',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        TextSpan(text: texto),
+                      ],
+                    ),
+                    style: estilo,
+                  ),
+                ),
+              ],
+            ),
+            if (acao != null) ...[const SizedBox(height: 12), acao!],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Destaque editorial (verde 50 com borda verde 100).
 class CartaoTint extends StatelessWidget {
-  const CartaoTint({super.key, required this.child, this.padding = const EdgeInsets.all(20), this.onTap});
+  const CartaoTint({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.onTap});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -56,11 +152,121 @@ class CartaoTint extends StatelessWidget {
     final t = context.tema;
     return Cartao(
       cor: t.tint,
-      sombra: false,
-      borda: t.altoContraste ? Border.all(color: CuidaCores.grafite, width: 1.5) : null,
+      raio: 12,
+      borda: Border.all(
+        color: t.altoContraste ? CuidaCores.tinta : CuidaCores.verde100,
+        width: t.altoContraste ? 1.5 : 1,
+      ),
       padding: padding,
       onTap: onTap,
       child: child,
+    );
+  }
+}
+
+/// Selo pequeno (cantos de 6 px): "Resposta gerada por IA", "Fonte oficial", "EMERGÊNCIA".
+class Selo extends StatelessWidget {
+  const Selo(
+    this.texto, {
+    super.key,
+    this.cor = CuidaCores.acaoEscuro,
+    this.fundo = CuidaCores.verde50,
+    this.icone,
+    this.forte = false,
+  });
+
+  final String texto;
+  final Color cor;
+  final Color fundo;
+  final IconData? icone;
+  final bool forte;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tema;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: t.altoContraste ? Colors.white : fundo,
+        borderRadius: BorderRadius.circular(CuidaRaio.selo),
+        border: t.altoContraste ? Border.all(color: cor) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icone != null) ...[Icon(icone, size: 13, color: cor), const SizedBox(width: 6)],
+          Flexible(
+            child: Text(
+              texto,
+              style: t.sans(12, lh: 16, peso: forte ? FontWeight.w800 : FontWeight.w700, cor: cor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Número do nível de atenção num quadrado colorido (1 verde, 2 azul, 3 roxo).
+class NumeroNivel extends StatelessWidget {
+  const NumeroNivel(this.indice, {super.key, this.tamanho = 32});
+
+  /// 0, 1 ou 2.
+  final int indice;
+  final double tamanho;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tema;
+    final i = indice.clamp(0, 2);
+    return Container(
+      width: tamanho,
+      height: tamanho,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: t.altoContraste ? Colors.white : CuidaCores.nivelFundo[i],
+        borderRadius: BorderRadius.circular(8),
+        border: t.altoContraste ? Border.all(color: CuidaCores.tinta, width: 1.5) : null,
+      ),
+      child: Text(
+        '${i + 1}',
+        style: t.sans(13, peso: FontWeight.w800, cor: CuidaCores.nivelTexto[i]),
+      ),
+    );
+  }
+}
+
+/// Chip tocável (36 px, cantos de 8 px). `destaque` usa o verde 50.
+class ChipCuida extends StatelessWidget {
+  const ChipCuida(this.texto, {super.key, required this.onPressed, this.destaque = false, this.iconeFim});
+
+  final String texto;
+  final VoidCallback? onPressed;
+  final bool destaque;
+  final IconData? iconeFim;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tema;
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: destaque ? CuidaCores.acaoEscuro : CuidaCores.tinta,
+        backgroundColor: destaque ? CuidaCores.verde50 : Colors.white,
+        side: BorderSide(color: destaque ? CuidaCores.verde100 : t.borda, width: t.larguraBorda),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: CuidaRaio.formaChip,
+        textStyle: t.sans(13.5, peso: destaque ? FontWeight.w700 : FontWeight.w600),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: Text(texto)),
+          if (iconeFim != null) ...[const SizedBox(width: 6), Icon(iconeFim, size: 13, color: CuidaCores.info)],
+        ],
+      ),
     );
   }
 }
@@ -87,20 +293,22 @@ class ListaSeparada extends StatelessWidget {
   }
 }
 
-/// Item de lista com marcador redondo e separador acima.
+/// Lista com marca de verificação verde, como nos artigos do protótipo.
 class ListaMarcadores extends StatelessWidget {
   const ListaMarcadores({
     super.key,
     required this.itens,
-    this.cor = CuidaCores.verde700,
+    this.cor = CuidaCores.acao,
     this.corLinha,
-    this.tamanho = 15.5,
-    this.lh = 23,
-    this.vertical = 12,
+    this.tamanho = 15,
+    this.lh = 22,
+    this.vertical = 3,
   });
 
   final List<String> itens;
   final Color cor;
+
+  /// Mantido por compatibilidade (o estilo 2.0 não usa linhas entre itens).
   final Color? corLinha;
   final double tamanho;
   final double lh;
@@ -113,18 +321,22 @@ class ListaMarcadores extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final item in itens)
-          Container(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: vertical),
-            decoration: BoxDecoration(border: Border(top: BorderSide(color: corLinha ?? t.linha))),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(top: (lh - 6) / 2),
-                  child: Container(width: 6, height: 6, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+                  padding: EdgeInsets.only(top: (lh - 15) / 2),
+                  child: Icon(Icons.check_rounded, size: 15, color: cor),
                 ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(item, style: t.sans(tamanho, lh: lh))),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: t.sans(tamanho, lh: lh, cor: t.corpo),
+                  ),
+                ),
               ],
             ),
           ),
@@ -135,7 +347,7 @@ class ListaMarcadores extends StatelessWidget {
 
 /// Link para documento oficial, com ícone de abrir fora do app.
 class LinkReferencia extends StatelessWidget {
-  const LinkReferencia({super.key, required this.referencia, this.vertical = 16});
+  const LinkReferencia({super.key, required this.referencia, this.vertical = 14});
 
   final Referencia referencia;
   final double vertical;
@@ -149,27 +361,32 @@ class LinkReferencia extends StatelessWidget {
         onTap: () => abrirLink(context, referencia.url),
         child: Container(
           padding: EdgeInsets.symmetric(vertical: vertical),
-          decoration: BoxDecoration(border: Border(top: BorderSide(color: t.linha))),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: t.linha)),
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.description_outlined, size: 18, color: CuidaCores.azul),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(Icons.description_outlined, size: 18, color: t.mut),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(referencia.titulo, style: t.sans(15, lh: 21, peso: FontWeight.w600, cor: CuidaCores.azul)),
+                    Text(
+                      referencia.titulo,
+                      style: t.sans(14.5, lh: 20, peso: FontWeight.w700, cor: CuidaCores.info),
+                    ),
                     const SizedBox(height: 2),
-                    Text(referencia.descricao, style: t.sans(13.5, lh: 20, cor: t.mut)),
+                    Text(referencia.descricao, style: t.sans(13, lh: 19, cor: t.mut)),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(Icons.open_in_new_rounded, size: 16, color: t.mut),
+              const Icon(Icons.north_east_rounded, size: 15, color: CuidaCores.info),
             ],
           ),
         ),
@@ -178,7 +395,7 @@ class LinkReferencia extends StatelessWidget {
   }
 }
 
-/// Linha de lista navegável (ícone, título, descrição e chevron).
+/// Linha de lista navegável (ícone, título, descrição e chevron), mínimo de 56 px.
 class LinhaNavegacao extends StatelessWidget {
   const LinhaNavegacao({
     super.key,
@@ -187,8 +404,8 @@ class LinhaNavegacao extends StatelessWidget {
     this.icone,
     this.inicio,
     required this.onTap,
-    this.padding = const EdgeInsets.fromLTRB(18, 10, 16, 10),
-    this.alturaMinima = 62,
+    this.padding = const EdgeInsets.fromLTRB(16, 8, 14, 8),
+    this.alturaMinima = 56,
     this.tituloEstilo,
   });
 
@@ -212,26 +429,26 @@ class LinhaNavegacao extends StatelessWidget {
           padding: padding,
           child: Row(
             children: [
-              if (icone != null) ...[
-                Icon(icone, size: 22, color: CuidaCores.azul),
-                const SizedBox(width: 14),
-              ],
-              if (inicio != null) ...[inicio!, const SizedBox(width: 16)],
+              if (icone != null) ...[Icon(icone, size: 20, color: t.mut), const SizedBox(width: 12)],
+              if (inicio != null) ...[inicio!, const SizedBox(width: 12)],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(titulo, style: tituloEstilo ?? t.sans(15.5, peso: FontWeight.w500, cor: CuidaCores.azul)),
+                    Text(
+                      titulo,
+                      style: tituloEstilo ?? t.sans(15, lh: 21, peso: FontWeight.w700, cor: CuidaCores.tinta),
+                    ),
                     if (descricao != null && descricao!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(descricao!, style: t.sans(13.5, lh: 19, cor: t.mut)),
+                      const SizedBox(height: 1),
+                      Text(descricao!, style: t.sans(13, lh: 18, cor: t.mut)),
                     ],
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(Icons.chevron_right_rounded, size: 22, color: t.mut),
+              const Icon(Icons.chevron_right_rounded, size: 20, color: CuidaCores.apoioClaro),
             ],
           ),
         ),
@@ -265,39 +482,42 @@ class LinhaInterruptor extends StatelessWidget {
         child: InkWell(
           onTap: () => onChanged(!valor),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 76),
+            constraints: const BoxConstraints(minHeight: 56),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 10, 14, 10),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(titulo, style: t.sans(15.5, peso: FontWeight.w500, cor: CuidaCores.azul)),
-                        const SizedBox(height: 3),
-                        Text(descricao, style: t.sans(13, lh: 19, cor: t.mut)),
+                        Text(
+                          titulo,
+                          style: t.sans(15, lh: 21, peso: FontWeight.w700, cor: CuidaCores.tinta),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(descricao, style: t.sans(13, lh: 18, cor: t.mut)),
                       ],
                     ),
                   ),
                   const SizedBox(width: 14),
                   AnimatedContainer(
                     duration: duracao,
-                    width: 52,
-                    height: 32,
+                    width: 46,
+                    height: 28,
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: valor ? CuidaCores.verde700 : CuidaCores.desativado,
+                      color: valor ? CuidaCores.acao : CuidaCores.bordaCampo,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: AnimatedAlign(
                       duration: duracao,
                       alignment: valor ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
-                        width: 26,
-                        height: 26,
+                        width: 22,
+                        height: 22,
                         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: valor ? const Icon(Icons.check_rounded, size: 15, color: CuidaCores.verde700) : null,
+                        child: valor ? const Icon(Icons.check_rounded, size: 13, color: CuidaCores.acao) : null,
                       ),
                     ),
                   ),
@@ -324,14 +544,16 @@ class TextoComLinks extends StatefulWidget {
     super.key,
     required this.trechos,
     required this.estilo,
-    this.corLink = CuidaCores.azul,
+    this.corLink = CuidaCores.acao,
     this.alinhamento = TextAlign.start,
+    this.sublinhado = false,
   });
 
   final List<TrechoTexto> trechos;
   final TextStyle estilo;
   final Color corLink;
   final TextAlign alinhamento;
+  final bool sublinhado;
 
   @override
   State<TextoComLinks> createState() => _TextoComLinksState();
@@ -365,8 +587,8 @@ class _TextoComLinksState extends State<TextoComLinks> {
                 text: trecho.texto,
                 style: widget.estilo.copyWith(
                   color: widget.corLink,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
+                  fontWeight: FontWeight.w700,
+                  decoration: widget.sublinhado ? TextDecoration.underline : null,
                   decorationColor: widget.corLink,
                 ),
                 recognizer: (TapGestureRecognizer()..onTap = trecho.onTap).also(_reconhecedores.add),
@@ -374,7 +596,7 @@ class _TextoComLinksState extends State<TextoComLinks> {
             else
               TextSpan(
                 text: trecho.texto,
-                style: trecho.negrito ? widget.estilo.copyWith(fontWeight: FontWeight.w600) : null,
+                style: trecho.negrito ? widget.estilo.copyWith(fontWeight: FontWeight.w700) : null,
               ),
         ],
       ),
@@ -391,9 +613,9 @@ extension _Also<T> on T {
   }
 }
 
-/// Avatar do usuário: a foto, se houver, ou as iniciais.
+/// Avatar do usuário: a foto, se houver, ou as iniciais sobre petróleo.
 class AvatarIniciais extends StatelessWidget {
-  const AvatarIniciais({super.key, required this.iniciais, this.foto, this.tamanho = 64});
+  const AvatarIniciais({super.key, required this.iniciais, this.foto, this.tamanho = 52});
 
   final String iniciais;
   final Uint8List? foto;
@@ -407,10 +629,10 @@ class AvatarIniciais extends StatelessWidget {
         height: tamanho,
         alignment: Alignment.center,
         clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(color: CuidaCores.azul, shape: BoxShape.circle),
+        decoration: const BoxDecoration(color: CuidaCores.petroleo, shape: BoxShape.circle),
         child: foto != null
             ? Image.memory(foto!, width: tamanho, height: tamanho, fit: BoxFit.cover, gaplessPlayback: true)
-            : Text(iniciais, style: context.tema.serif(tamanho * 0.375, cor: Colors.white)),
+            : Text(iniciais, style: context.tema.titulo(tamanho * 0.35, cor: Colors.white, tracking: 0)),
       ),
     );
   }
@@ -430,15 +652,23 @@ class NotaApoio extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(padding: const EdgeInsets.only(top: 2), child: Icon(icone, size: 16, color: t.mut)),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icone, size: 16, color: t.mut),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: Text(texto, style: t.sans(tamanho, lh: tamanho * 1.48, cor: t.mut))),
+        Expanded(
+          child: Text(
+            texto,
+            style: t.sans(tamanho, lh: tamanho * 1.46, cor: t.mut),
+          ),
+        ),
       ],
     );
   }
 }
 
-/// Mensagem de confirmação com fundo verde suave.
+/// Confirmação de sucesso ("Alterações salvas").
 class AvisoSucesso extends StatelessWidget {
   const AvisoSucesso({super.key, required this.texto, this.acao});
 
@@ -446,28 +676,7 @@ class AvisoSucesso extends StatelessWidget {
   final Widget? acao;
 
   @override
-  Widget build(BuildContext context) {
-    final t = context.tema;
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(16, acao == null ? 12 : 0, 12, acao == null ? 12 : 0),
-        decoration: BoxDecoration(
-          color: t.tint,
-          borderRadius: BorderRadius.circular(16),
-          border: t.altoContraste ? Border.all(color: CuidaCores.grafite, width: 1.5) : null,
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.check_circle_outline_rounded, size: 20, color: CuidaCores.verde700),
-            const SizedBox(width: 12),
-            Expanded(child: Text(texto, style: t.sans(14.5, peso: FontWeight.w500, cor: CuidaCores.azul))),
-            if (acao != null) acao!,
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Aviso(tipo: TipoAviso.sucesso, texto: texto, acao: acao);
 }
 
 /// Cabeçalho simples com botão voltar, usado nas telas internas.
@@ -480,12 +689,15 @@ class CabecalhoVoltar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-      child: Align(alignment: Alignment.centerLeft, child: BotaoVoltar(onPressed: onVoltar)),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: BotaoVoltar(onPressed: onVoltar),
+      ),
     );
   }
 }
 
-/// Estrutura das telas internas: voltar, título em serifa, texto de apoio e conteúdo rolável.
+/// Estrutura das telas internas: voltar, título (26/32, 800), apoio e conteúdo rolável.
 class TelaInterna extends StatelessWidget {
   const TelaInterna({
     super.key,
@@ -511,19 +723,22 @@ class TelaInterna extends StatelessWidget {
           children: [
             CabecalhoVoltar(onVoltar: onVoltar),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(titulo, style: t.serif(32, lh: 38, tracking: -0.015)),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
+                    children: [
+                      Semantics(header: true, child: Text(titulo, style: t.titulo(26, lh: 32))),
+                      if (subtitulo != null) ...[
+                        const SizedBox(height: 6),
+                        Text(subtitulo!, style: t.sans(14.5, lh: 21, cor: t.mut)),
+                      ],
+                      for (final c in children) ...[SizedBox(height: espaco), c],
+                    ],
                   ),
-                  if (subtitulo != null) ...[
-                    const SizedBox(height: 10),
-                    Text(subtitulo!, style: t.sans(15, lh: 23, cor: t.mut)),
-                  ],
-                  for (final c in children) ...[SizedBox(height: espaco), c],
-                ],
+                ),
               ),
             ),
           ],
@@ -533,7 +748,7 @@ class TelaInterna extends StatelessWidget {
   }
 }
 
-/// Título de seção pequeno em sans-serif (ex.: "Conta", "Preferências").
+/// Rótulo de seção em caixa alta ("CONTA", "PREFERÊNCIAS"); `forte` usa o título de seção.
 class RotuloSecao extends StatelessWidget {
   const RotuloSecao(this.texto, {super.key, this.forte = false});
 
@@ -546,13 +761,11 @@ class RotuloSecao extends StatelessWidget {
     return Semantics(
       header: true,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: forte ? 0 : 4),
-        child: Text(
-          texto,
-          style: forte
-              ? t.sans(15, peso: FontWeight.w600, cor: CuidaCores.azul)
-              : t.sans(13.5, peso: FontWeight.w500, cor: t.mut),
-        ),
+        padding: EdgeInsets.symmetric(horizontal: forte ? 0 : 2),
+        child: forte
+            ? Text(texto, style: t.titulo(17, lh: 24, tracking: 0))
+            // O leitor de tela recebe o texto normal, não soletrado em maiúsculas.
+            : Text(texto.toUpperCase(), semanticsLabel: texto, style: t.legenda()),
       ),
     );
   }

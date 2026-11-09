@@ -1,11 +1,11 @@
 {
-    "name": "cuidaia",
-    "short_name": "cuidaia",
+    "name": "CuidaIA",
+    "short_name": "CuidaIA",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F8F8",
+    "theme_color": "#137567",
+    "description": "Entenda o SUS e saiba onde ser atendido, em linguagem simples.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -81,18 +81,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
             const CabecalhoVoltar(),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
                 children: [
-                  Semantics(
-                    header: true,
-                    child: Text('Criar sua conta', style: t.serif(32, lh: 38, tracking: -0.015)),
-                  ),
-                  const SizedBox(height: 10),
+                  Semantics(header: true, child: Text('Criar sua conta', style: t.titulo(26, lh: 32))),
+                  const SizedBox(height: 6),
                   Text(
                     'Leva menos de um minuto. Não pedimos nenhuma informação sobre a sua saúde.',
-                    style: t.sans(15, lh: 23, cor: t.mut),
+                    style: t.sans(14.5, lh: 21, cor: t.mut),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   if (_ok) _sucesso(t) else _formulario(t),
                 ],
               ),
@@ -107,22 +104,18 @@ class _CadastroScreenState extends State<CadastroScreen> {
     return Semantics(
       liveRegion: true,
       child: Cartao(
-        raio: 24,
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Align(
               alignment: Alignment.centerLeft,
-              child: Icon(Icons.check_circle_outline_rounded, size: 40, color: CuidaCores.verde700),
+              child: Icon(Icons.check_circle_outline_rounded, size: 32, color: CuidaCores.sucesso),
             ),
             const SizedBox(height: 14),
-            Text('Conta criada', style: t.serif(26)),
+            Text('Conta criada', style: t.titulo(20, lh: 26)),
             const SizedBox(height: 14),
-            Text(
-              'Enviamos um link de confirmação para ${_email.text.trim()}.',
-              style: t.sans(15, lh: 23, cor: t.mut),
-            ),
+            Text('Enviamos um link de confirmação para ${_email.text.trim()}.', style: t.sans(15, lh: 23, cor: t.mut)),
             const SizedBox(height: 20),
             BotaoPrimario('Começar', onPressed: _comecar),
           ],
@@ -146,30 +139,10 @@ class _CadastroScreenState extends State<CadastroScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (totalErros > 0) ...[
-            Semantics(
-              liveRegion: true,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(color: CuidaCores.erroFundo, borderRadius: BorderRadius.circular(16)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.error_outline_rounded, size: 20, color: CuidaCores.erro),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(children: [
-                          const TextSpan(text: 'Quase lá. ', style: TextStyle(fontWeight: FontWeight.w600)),
-                          TextSpan(
-                            text: totalErros == 1 ? 'Revise 1 campo destacado.' : 'Revise $totalErros campos destacados.',
-                          ),
-                        ]),
-                        style: t.sans(14, lh: 21, cor: CuidaCores.erroTitulo),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            Aviso(
+              tipo: TipoAviso.erro,
+              titulo: 'Quase lá.',
+              texto: totalErros == 1 ? 'Revise 1 campo destacado.' : 'Revise $totalErros campos destacados.',
             ),
             const SizedBox(height: 20),
           ],
@@ -239,7 +212,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 Expanded(
                   child: TextoComLinks(
                     estilo: t.sans(14, lh: 21),
-                    corLink: CuidaCores.verde700,
+                    corLink: CuidaCores.acao,
                     trechos: [
                       const TrechoTexto('Li e concordo com os '),
                       TrechoTexto('Termos de uso', onTap: () => _abrir(const TermosScreen())),
@@ -264,7 +237,10 @@ class _CadastroScreenState extends State<CadastroScreen> {
           if (_erroServidor != null) ...[
             Semantics(
               liveRegion: true,
-              child: Text(_erroServidor!, style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro)),
+              child: Text(
+                _erroServidor!,
+                style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
+              ),
             ),
             const SizedBox(height: 12),
           ],
