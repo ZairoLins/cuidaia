@@ -1,5 +1,1 @@
-{
-  "firestore": {
-    "rules": "firestore.rules"
-  }
-}
+{"firestore":{"rules":"firestore.rules"},"hosting":{"public":"hosting","ignore":["firebase.json","**/.*"]},"flutter":{"platforms":{"android":{"default":{"projectId":"cuidaia-41f74","appId":"1:687788866642:android:60e6ac24e9fe42d88e338b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"cuidaia-41f74","configurations":{"android":"1:687788866642:android:60e6ac24e9fe42d88e338b","web":"1:687788866642:web:48a246e2b721aa998e338b"}}}}}}

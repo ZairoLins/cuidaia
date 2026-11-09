@@ -22,8 +22,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _senha = TextEditingController();
   bool _verSenha = false;
   bool _entrando = false;
+  bool _entrandoGoogle = false;
+
+  /// Falha de login (credenciais, Google, rede): aviso no topo do formulário.
+  String? _erroConta;
   String? _erroEmail;
   String? _erroSenha;
+
+  bool get _ocupado => _entrando || _entrandoGoogle;
 
   @override
   void dispose() {
@@ -33,12 +39,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _entrar() async {
-    if (_entrando) return;
+    if (_ocupado) return;
     final emailOk = emailValido(_email.text);
     final senhaOk = _senha.text.isNotEmpty;
     setState(() {
-      _erroEmail = emailOk ? null : 'Digite um e-mail válido, como nome@exemplo.com.';
+      _erroEmail = emailOk ? null : 'Informe um e-mail válido.';
       _erroSenha = senhaOk ? null : 'Informe sua senha.';
+      _erroConta = null;
     });
     if (!emailOk || !senhaOk) return;
 
@@ -50,112 +57,145 @@ class _LoginScreenState extends State<LoginScreen> {
       TextInput.finishAutofillContext();
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
     } on ErroConta catch (e) {
-      if (mounted) setState(() => _erroSenha = e.mensagem);
+      if (mounted) setState(() => _erroConta = e.mensagem);
     } finally {
       if (mounted) setState(() => _entrando = false);
     }
   }
 
+  Future<void> _entrarComGoogle() async {
+    if (_ocupado) return;
+    setState(() {
+      _entrandoGoogle = true;
+      _erroConta = null;
+    });
+    try {
+      await AppScope.read(context).entrarComGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+    } on ErroConta catch (e) {
+      if (mounted && !e.cancelado) setState(() => _erroConta = e.mensagem);
+    } finally {
+      if (mounted) setState(() => _entrandoGoogle = false);
+    }
+  }
+
   void _esqueciSenha() => mostrarRecuperarSenha(context, email: _email.text);
+
+  void _abrir(Widget tela) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => tela));
 
   @override
   Widget build(BuildContext context) {
     final t = context.tema;
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned(
-            right: -40,
-            top: MediaQuery.paddingOf(context).top + 18,
-            child: const Opacity(opacity: 0.7, child: RedeDecorativa.login()),
-          ),
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                  sliver: SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AutofillGroup(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Row(
-                            children: [CuidaSimbolo(tamanho: 34), SizedBox(width: 10), CuidaMarca(tamanho: 25)],
-                          ),
-                          const SizedBox(height: 44),
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              'Saúde pública, explicada com cuidado.',
-                              style: t.serif(36, lh: 40, tracking: -0.015),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Align(alignment: Alignment.centerLeft, child: CuidaLogo()),
+                      const SizedBox(height: 28),
+                      Semantics(header: true, child: Text('Entrar', style: t.titulo(26, lh: 32))),
+                      const SizedBox(height: 28),
+                      if (_erroConta != null) ...[
+                        Aviso(tipo: TipoAviso.erro, texto: _erroConta!),
+                        const SizedBox(height: 16),
+                      ],
+                      BotaoGoogle(carregando: _entrandoGoogle, onPressed: _ocupado ? null : _entrarComGoogle),
+                      const SizedBox(height: 16),
+                      ExcludeSemantics(
+                        child: Row(
+                          children: [
+                            Expanded(child: Divider(color: t.linha, height: 1)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'ou com e-mail',
+                                style: t.sans(13, peso: FontWeight.w600, cor: CuidaCores.apoioClaro),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Entenda como o SUS funciona, tire dúvidas e saiba qual serviço procurar.',
-                            style: t.sans(16, lh: 25, cor: t.mut),
-                          ),
-                          const SizedBox(height: 32),
-                          CuidaCampo(
-                            rotulo: 'E-mail',
-                            controller: _email,
-                            dica: 'nome@exemplo.com',
-                            teclado: TextInputType.emailAddress,
-                            autofill: const [AutofillHints.email],
-                            acaoTeclado: TextInputAction.next,
-                            erro: _erroEmail,
-                          ),
-                          const SizedBox(height: 16),
-                          CuidaCampo(
-                            rotulo: 'Senha',
-                            controller: _senha,
-                            dica: 'Sua senha',
-                            oculto: !_verSenha,
-                            autofill: const [AutofillHints.password],
-                            acaoTeclado: TextInputAction.done,
-                            aoEnviar: (_) => _entrar(),
-                            erro: _erroSenha,
-                            acaoRotulo: BotaoLink('Esqueci minha senha', onPressed: _esqueciSenha),
-                            sufixo: BotaoVerSenha(
-                              visivel: _verSenha,
-                              onPressed: () => setState(() => _verSenha = !_verSenha),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          BotaoPrimario('Entrar', carregando: _entrando, onPressed: _entrar),
-                          const SizedBox(height: 10),
-                          BotaoSecundario(
-                            'Criar minha conta',
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const CadastroScreen()),
-                            ),
-                          ),
-                          const Spacer(),
-                          const SizedBox(height: 32),
-                          TextoComLinks(
-                            alinhamento: TextAlign.center,
-                            estilo: t.sans(13, lh: 20, cor: t.mut),
-                            trechos: [
-                              const TrechoTexto('Ao entrar, você concorda com os '),
-                              TrechoTexto('Termos de uso', onTap: () => _abrir(const TermosScreen())),
-                              const TrechoTexto(' e a '),
-                              TrechoTexto('Política de privacidade', onTap: () => _abrir(const PrivacidadeScreen())),
-                              const TrechoTexto('.'),
-                            ],
-                          ),
+                            Expanded(child: Divider(color: t.linha, height: 1)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      CuidaCampo(
+                        rotulo: 'E-mail',
+                        controller: _email,
+                        dica: 'nome@exemplo.com',
+                        teclado: TextInputType.emailAddress,
+                        autofill: const [AutofillHints.email],
+                        acaoTeclado: TextInputAction.next,
+                        erro: _erroEmail,
+                        invalido: _erroConta != null,
+                        onChanged: (_) {
+                          if (_erroConta != null) setState(() => _erroConta = null);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      CuidaCampo(
+                        rotulo: 'Senha',
+                        controller: _senha,
+                        dica: 'Sua senha',
+                        oculto: !_verSenha,
+                        autofill: const [AutofillHints.password],
+                        acaoTeclado: TextInputAction.done,
+                        aoEnviar: (_) => _entrar(),
+                        erro: _erroSenha,
+                        invalido: _erroConta != null,
+                        onChanged: (_) {
+                          if (_erroConta != null) setState(() => _erroConta = null);
+                        },
+                        acaoRotulo: BotaoLink('Esqueci minha senha', onPressed: _esqueciSenha),
+                        sufixo: BotaoVerSenha(
+                          visivel: _verSenha,
+                          onPressed: () => setState(() => _verSenha = !_verSenha),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      BotaoPrimario(
+                        _entrando ? 'Entrando…' : 'Entrar',
+                        carregando: _entrando,
+                        onPressed: _ocupado ? null : _entrar,
+                      ),
+                      const SizedBox(height: 28),
+                      TextoComLinks(
+                        alinhamento: TextAlign.center,
+                        estilo: t.sans(14.5, cor: t.mut),
+                        trechos: [
+                          const TrechoTexto('Ainda não tem conta? '),
+                          TrechoTexto('Criar conta', onTap: () => _abrir(const CadastroScreen())),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 40),
+                      TextoComLinks(
+                        alinhamento: TextAlign.center,
+                        estilo: t.sans(12.5, lh: 19, cor: CuidaCores.apoioClaro),
+                        corLink: t.mut,
+                        sublinhado: true,
+                        trechos: [
+                          const TrechoTexto('Ao continuar, você concorda com os '),
+                          TrechoTexto('Termos', onTap: () => _abrir(const TermosScreen())),
+                          const TrechoTexto(' e a '),
+                          TrechoTexto('Privacidade', onTap: () => _abrir(const PrivacidadeScreen())),
+                          const TrechoTexto('.'),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-
-  void _abrir(Widget tela) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => tela));
 }

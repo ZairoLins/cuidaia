@@ -101,8 +101,7 @@ const niveisAtencao = [
     rotulo: 'Porta de entrada',
     titulo: 'Atenção Primária',
     resumo: 'UBS e Saúde da Família, perto de casa',
-    descricao:
-        'Primeiro contato preferencial com o SUS e coordenadora do cuidado. Promove saúde, previne doenças, acompanha você ao longo do tempo e encaminha quando necessário.',
+    descricao: 'Primeiro contato preferencial com o SUS e coordenadora do cuidado. Promove saúde, previne doenças, acompanha você ao longo do tempo e encaminha quando necessário.',
     exemplos: 'UBS · Saúde da Família · Vacinação · Pré-natal',
     topico: 'primaria',
   ),
@@ -111,8 +110,7 @@ const niveisAtencao = [
     rotulo: 'Atendimento especializado',
     titulo: 'Atenção Secundária',
     resumo: 'Especialistas e exames em ambulatórios',
-    descricao:
-        'Consultas com especialistas e serviços ambulatoriais especializados, com apoio de exames diagnósticos, em policlínicas e centros de especialidades.',
+    descricao: 'Consultas com especialistas e serviços ambulatoriais especializados, com apoio de exames diagnósticos, em policlínicas e centros de especialidades.',
     exemplos: 'Cardiologia · Ultrassonografia · Endoscopia · Centros odontológicos',
     topico: 'secundaria',
   ),
@@ -121,40 +119,65 @@ const niveisAtencao = [
     rotulo: 'Alta complexidade',
     titulo: 'Atenção Terciária',
     resumo: 'Alta complexidade em hospitais de referência',
-    descricao:
-        'Serviços de maior complexidade e densidade tecnológica, geralmente em hospitais de referência que atendem toda uma região.',
+    descricao: 'Serviços de maior complexidade e densidade tecnológica, geralmente em hospitais de referência que atendem toda uma região.',
     exemplos: 'UTI · Cirurgia cardíaca · Transplantes · Oncologia',
     topico: 'terciaria',
   ),
 ];
 
 const conexoesRede = [
-  ItemTexto('Encaminhamento',
-      'Quando você precisa de um especialista ou exame, a equipe que acompanha você faz o pedido com as informações do seu caso.'),
-  ItemTexto('Regulação',
-      'Centrais de regulação organizam vagas de consultas, exames e internações conforme a necessidade e a prioridade de cada caso.'),
-  ItemTexto('Retorno (contrarreferência)',
-      'Depois do atendimento especializado, as informações voltam para a UBS, que continua acompanhando você.'),
-  ItemTexto('Urgência e emergência',
-      'UPA 24h, pronto-socorro e SAMU 192 atendem situações urgentes a qualquer hora e acionam outros serviços quando preciso.'),
+  ItemTexto(
+    'Encaminhamento',
+    'Quando você precisa de um especialista ou exame, a equipe que acompanha você faz o pedido com as informações do seu caso.',
+  ),
+  ItemTexto(
+    'Regulação',
+    'Centrais de regulação organizam vagas de consultas, exames e internações conforme a necessidade e a prioridade de cada caso.',
+  ),
+  ItemTexto(
+    'Retorno (contrarreferência)',
+    'Depois do atendimento especializado, as informações voltam para a UBS, que continua acompanhando você.',
+  ),
+  ItemTexto(
+    'Urgência e emergência',
+    'UPA 24h, pronto-socorro e SAMU 192 atendem situações urgentes a qualquer hora e acionam outros serviços quando preciso.',
+  ),
 ];
 
 const percursoExemplo = [
-  ItemTexto('Consulta na UBS', 'Em uma consulta de rotina, a equipe identifica pressão alta e começa o acompanhamento.'),
-  ItemTexto('Encaminhamento e regulação',
-      'Para avaliar o coração, ele é encaminhado à cardiologia. A regulação agenda a consulta.'),
+  ItemTexto(
+    'Consulta na UBS',
+    'Em uma consulta de rotina, a equipe identifica pressão alta e começa o acompanhamento.',
+  ),
+  ItemTexto(
+    'Encaminhamento e regulação',
+    'Para avaliar o coração, ele é encaminhado à cardiologia. A regulação agenda a consulta.',
+  ),
   ItemTexto('Atenção especializada', 'No ambulatório de especialidades, faz a consulta e os exames solicitados.'),
   ItemTexto('De volta à UBS', 'O relatório retorna à equipe, que segue cuidando dele perto de casa.'),
 ];
 
 const referenciasAprenda = [
-  Referencia('Portaria GM/MS nº 4.279/2010', 'Diretrizes para a organização da RAS · Ministério da Saúde',
-      'https://bvsms.saude.gov.br/bvs/saudelegis/gm/2010/prt4279_30_12_2010.html'),
-  Referencia('Portaria nº 2.436/2017 — PNAB', 'Política Nacional de Atenção Básica · Ministério da Saúde',
-      'https://bvsms.saude.gov.br/bvs/saudelegis/gm/2017/prt2436_22_09_2017.html'),
-  Referencia('Decreto nº 7.508/2011', 'Organização do SUS e portas de entrada · Planalto',
-      'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/decreto/d7508.htm'),
-  Referencia('Lei nº 8.080/1990', 'Lei Orgânica da Saúde · Planalto', 'https://www.planalto.gov.br/ccivil_03/leis/l8080.htm'),
+  Referencia(
+    'Portaria GM/MS nº 4.279/2010',
+    'Diretrizes para a organização da RAS · Ministério da Saúde',
+    'https://bvsms.saude.gov.br/bvs/saudelegis/gm/2010/prt4279_30_12_2010.html',
+  ),
+  Referencia(
+    'Portaria nº 2.436/2017 — PNAB',
+    'Política Nacional de Atenção Básica · Ministério da Saúde',
+    'https://bvsms.saude.gov.br/bvs/saudelegis/gm/2017/prt2436_22_09_2017.html',
+  ),
+  Referencia(
+    'Decreto nº 7.508/2011',
+    'Organização do SUS e portas de entrada · Planalto',
+    'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/decreto/d7508.htm',
+  ),
+  Referencia(
+    'Lei nº 8.080/1990',
+    'Lei Orgânica da Saúde · Planalto',
+    'https://www.planalto.gov.br/ccivil_03/leis/l8080.htm',
+  ),
 ];
 
 const assuntosExplorar = [
@@ -172,23 +195,24 @@ const artigos = <String, Artigo>{
     categoria: 'Atenção Primária',
     titulo: 'Atenção Primária: a porta de entrada do SUS',
     tempo: 'Leitura de 5 min',
-    lead:
-        'É o cuidado mais próximo de você. Nas Unidades Básicas de Saúde, as equipes acompanham sua saúde ao longo do tempo e ajudam a organizar o acesso a outros serviços.',
+    lead: 'É o cuidado mais próximo de você. Nas Unidades Básicas de Saúde, as equipes acompanham sua saúde ao longo do tempo e ajudam a organizar o acesso a outros serviços.',
     diagramaRotulo: 'Atenção Primária destacada, ligada nos dois sentidos à Secundária e à Terciária.',
     secoes: [
       SecaoArtigo('O que é', [
         'A Atenção Primária à Saúde (APS) é o primeiro contato preferencial das pessoas com o SUS. Ela funciona perto de onde as pessoas moram, trabalham e convivem.',
         'Por estar próxima da comunidade, a equipe conhece o território e pode acompanhar as famílias por muitos anos.',
       ]),
-      SecaoArtigo('O que você encontra na UBS', [
-        'Os serviços variam de um município para outro, mas é comum encontrar:',
-      ], [
-        'Consultas com médicos, enfermeiros e dentistas',
-        'Vacinação',
-        'Pré-natal e acompanhamento do crescimento das crianças',
-        'Acompanhamento de condições crônicas, como hipertensão e diabetes',
-        'Curativos, testes rápidos e orientações sobre medicamentos',
-      ]),
+      SecaoArtigo(
+        'O que você encontra na UBS',
+        ['Os serviços variam de um município para outro, mas é comum encontrar:'],
+        [
+          'Consultas com médicos, enfermeiros e dentistas',
+          'Vacinação',
+          'Pré-natal e acompanhamento do crescimento das crianças',
+          'Acompanhamento de condições crônicas, como hipertensão e diabetes',
+          'Curativos, testes rápidos e orientações sobre medicamentos',
+        ],
+      ),
       SecaoArtigo('Quem faz parte da equipe', [
         'As equipes de Saúde da Família costumam reunir médico, enfermeiro, técnico ou auxiliar de enfermagem e agentes comunitários de saúde. Muitas também contam com equipe de saúde bucal.',
       ]),
@@ -197,8 +221,7 @@ const artigos = <String, Artigo>{
       ]),
     ],
     destaqueTitulo: 'Importante',
-    destaque:
-        'Em urgências ou emergências, você não precisa passar pela UBS antes: procure uma UPA 24h, um pronto-socorro ou ligue 192 (SAMU).',
+    destaque: 'Em urgências ou emergências, você não precisa passar pela UBS antes: procure uma UPA 24h, um pronto-socorro ou ligue 192 (SAMU).',
     refs: [refPnab, refRas],
     nivelAtivo: 0,
   ),
@@ -207,21 +230,22 @@ const artigos = <String, Artigo>{
     categoria: 'Atenção Secundária',
     titulo: 'Atenção Secundária: o cuidado especializado',
     tempo: 'Leitura de 4 min',
-    lead:
-        'Reúne consultas com especialistas e exames que exigem equipamentos ou profissionais específicos, geralmente em ambulatórios e policlínicas.',
+    lead: 'Reúne consultas com especialistas e exames que exigem equipamentos ou profissionais específicos, geralmente em ambulatórios e policlínicas.',
     diagramaRotulo: 'Atenção Secundária destacada, ligada nos dois sentidos à Primária e à Terciária.',
     secoes: [
       SecaoArtigo('O que é', [
         'A atenção especializada ambulatorial apoia a Atenção Primária quando é preciso um olhar mais específico sobre um problema de saúde.',
       ]),
-      SecaoArtigo('Exemplos de serviços', [
-        'Dependendo da região, a rede pode oferecer:',
-      ], [
-        'Consultas com cardiologistas, ortopedistas, dermatologistas e outros especialistas',
-        'Exames como ultrassonografia e endoscopia',
-        'Centros de Especialidades Odontológicas (CEO)',
-        'Centros de Atenção Psicossocial (CAPS), na área de saúde mental',
-      ]),
+      SecaoArtigo(
+        'Exemplos de serviços',
+        ['Dependendo da região, a rede pode oferecer:'],
+        [
+          'Consultas com cardiologistas, ortopedistas, dermatologistas e outros especialistas',
+          'Exames como ultrassonografia e endoscopia',
+          'Centros de Especialidades Odontológicas (CEO)',
+          'Centros de Atenção Psicossocial (CAPS), na área de saúde mental',
+        ],
+      ),
       SecaoArtigo('Como se chega até ela', [
         'Na maioria dos casos, o acesso começa com um encaminhamento da UBS. A central de regulação organiza as vagas considerando a necessidade e a prioridade de cada pessoa.',
         'Alguns serviços, como os CAPS, também podem receber pessoas diretamente. As regras variam conforme o município.',
@@ -231,8 +255,7 @@ const artigos = <String, Artigo>{
       ]),
     ],
     destaqueTitulo: 'Você sabia?',
-    destaque:
-        'A ordem de atendimento na regulação considera a prioridade clínica de cada caso, e não apenas a ordem de chegada.',
+    destaque: 'A ordem de atendimento na regulação considera a prioridade clínica de cada caso, e não apenas a ordem de chegada.',
     refs: [refRas, refDecreto],
     nivelAtivo: 1,
   ),
@@ -241,22 +264,23 @@ const artigos = <String, Artigo>{
     categoria: 'Atenção Terciária',
     titulo: 'Atenção Terciária: a alta complexidade',
     tempo: 'Leitura de 4 min',
-    lead:
-        'São serviços que exigem tecnologia avançada e equipes altamente especializadas, oferecidos principalmente em hospitais de referência.',
+    lead: 'São serviços que exigem tecnologia avançada e equipes altamente especializadas, oferecidos principalmente em hospitais de referência.',
     diagramaRotulo: 'Atenção Terciária destacada, ligada nos dois sentidos à Primária e à Secundária.',
     secoes: [
       SecaoArtigo('O que é', [
         'A atenção de alta complexidade reúne procedimentos de maior densidade tecnológica. Esses serviços costumam ser organizados por região, atendendo a população de vários municípios.',
       ]),
-      SecaoArtigo('Exemplos', [
-        'Fazem parte deste nível, por exemplo:',
-      ], [
-        'Internações em UTI e em enfermarias especializadas',
-        'Cirurgias cardíacas e neurocirurgias',
-        'Transplantes de órgãos',
-        'Tratamento do câncer, como quimioterapia e radioterapia',
-        'Hemodiálise',
-      ]),
+      SecaoArtigo(
+        'Exemplos',
+        ['Fazem parte deste nível, por exemplo:'],
+        [
+          'Internações em UTI e em enfermarias especializadas',
+          'Cirurgias cardíacas e neurocirurgias',
+          'Transplantes de órgãos',
+          'Tratamento do câncer, como quimioterapia e radioterapia',
+          'Hemodiálise',
+        ],
+      ),
       SecaoArtigo('Como se chega até ela', [
         'O acesso pode acontecer por encaminhamento e regulação, a partir de outros serviços da rede, ou pela urgência e emergência, quando há risco à vida.',
       ]),
@@ -265,8 +289,7 @@ const artigos = <String, Artigo>{
       ]),
     ],
     destaqueTitulo: 'Importante',
-    destaque:
-        'Alta complexidade não quer dizer atendimento mais importante: cada nível tem um papel diferente, e todos trabalham juntos.',
+    destaque: 'Alta complexidade não quer dizer atendimento mais importante: cada nível tem um papel diferente, e todos trabalham juntos.',
     refs: [refRas, refLei8080],
     nivelAtivo: 2,
   ),

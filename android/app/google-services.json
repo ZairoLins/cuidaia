@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "687788866642",
+    "project_id": "cuidaia-41f74",
+    "storage_bucket": "cuidaia-41f74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687788866642:android:60e6ac24e9fe42d88e338b",
+        "android_client_info": {
+          "package_name": "br.com.cuidaia.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "687788866642-d550dt6hqv7s1eqn48if8rmgrngguk6b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.cuidaia.app",
+            "certificate_hash": "ef5e61d181e1c74325a6511a1c60cee5544bfe85"
+          }
+        },
+        {
+          "client_id": "687788866642-4rd9jsgdmuh82a6kt0ummqv3bgq0ft5s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCwDOO_qnd8rPfB-dGcV5wRm2EfpujXoU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "687788866642-4rd9jsgdmuh82a6kt0ummqv3bgq0ft5s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -46,6 +46,9 @@ dependencies:
   firebase_app_check: ^0.5.1
   image_picker: ^1.2.4
   share_plus: ^13.3.1
+  flutter_local_notifications: ^23.0.0
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +60,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -99,3 +103,19 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Ícone do app: `dart run flutter_launcher_icons`. As imagens em assets/icone
+# saem do próprio símbolo: `flutter test tool/gerar_icones_test.dart`.
+flutter_launcher_icons:
+  android: "ic_launcher"
+  image_path: "assets/icone/icone.png"
+  adaptive_icon_background: "#E6F2EF"
+  adaptive_icon_foreground: "assets/icone/icone_frente.png"
+  min_sdk_android: 21
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icone/icone.png"
+    background_color: "#F7F8F8"
+    theme_color: "#137567"

@@ -1,0 +1,19 @@
+id,texto,esperado
+P01,Preciso renovar a receita do remédio de pressão que tomo há anos.,primaria
+P02,Meu filho fez 2 meses e quero saber quais vacinas ele precisa tomar.,primaria
+P03,Descobri que estou grávida e quero começar o pré-natal.,primaria
+S01,"O médico do posto disse que preciso passar com um cardiologista, como faço?",secundaria
+S02,O médico pediu uma endoscopia e não sei onde fazer esse exame.,secundaria
+S03,Meu filho tem otite que volta toda hora e precisa ser acompanhado por um otorrino.,secundaria
+T01,Meu pai foi diagnosticado com câncer e vai precisar fazer quimioterapia.,terciaria
+T02,Minha mãe faz hemodiálise e entrou na fila para um transplante de rim.,terciaria
+T03,O cardiologista disse que vou precisar de uma cirurgia no coração.,terciaria
+U01,Cortei a mão com uma faca na cozinha e o corte é fundo.,urgencia
+U02,Meu filho está com febre de 39 graus desde ontem e vomitou várias vezes.,urgencia
+U03,"Torci o tornozelo jogando bola, está muito inchado e não consigo pisar.",urgencia
+M01,Ando muito triste há meses e não tenho vontade de fazer nada.,psicossocial
+M02,Tenho crises de ansiedade quase todos os dias e não sei mais o que fazer.,psicossocial
+M03,Meu irmão está bebendo todos os dias e a família não sabe como ajudar.,psicossocial
+N01,O que significa a sigla SUS?,nao_se_aplica
+N02,Qual a diferença entre a UBS e a UPA?,nao_se_aplica
+N03,Qual é a capital do Brasil?,nao_se_aplica

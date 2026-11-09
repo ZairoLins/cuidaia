@@ -25,7 +25,10 @@ class AcessibilidadeScreen extends StatelessWidget {
           children: [
             const RotuloSecao('Tamanho do texto', forte: true),
             const SizedBox(height: 12),
-            _SeletorTamanho(atual: a.texto, onChanged: (v) => mudar(a.copyWith(texto: v))),
+            _SeletorTamanho(
+              atual: a.texto,
+              onChanged: (v) => mudar(a.copyWith(texto: v)),
+            ),
           ],
         ),
         Column(
@@ -40,9 +43,12 @@ class AcessibilidadeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Atenção Primária · 5 min', style: t.sans(13, peso: FontWeight.w500, cor: t.mut)),
+                    Text(
+                      'Atenção Primária · 5 min',
+                      style: t.sans(13, peso: FontWeight.w500, cor: t.mut),
+                    ),
                     const SizedBox(height: 8),
-                    Text('A porta de entrada do SUS', style: t.serif(22, lh: 27.5)),
+                    Text('A porta de entrada do SUS', style: t.titulo(22, lh: 27.5)),
                     const SizedBox(height: 8),
                     Text(
                       'A Unidade Básica de Saúde é o lugar de referência para consultas, vacinas e acompanhamento.',
@@ -97,10 +103,8 @@ class AcessibilidadeScreen extends StatelessWidget {
                   'Testar a voz',
                   icone: Icons.volume_up_outlined,
                   preenchido: true,
-                  onPressed: () => Voz.instancia.falar(
-                    'teste',
-                    'Olá! Esta é a voz que vai ler as respostas do assistente CuidaIA.',
-                  ),
+                  onPressed: () =>
+                      Voz.instancia.falar('teste', 'Olá! Esta é a voz que vai ler as respostas do assistente CuidaIA.'),
                 ),
               ),
             ],
@@ -128,64 +132,69 @@ class _SeletorTamanho extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tema;
     const amostras = {TamanhoTexto.padrao: 18.0, TamanhoTexto.grande: 23.0, TamanhoTexto.muito: 28.0};
-    return Container(
-      padding: const EdgeInsets.all(4),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: CuidaCores.trilho,
-        borderRadius: BorderRadius.circular(18),
-        border: t.altoContraste ? Border.all(color: CuidaCores.grafite, width: 1.5) : null,
+        borderRadius: BorderRadius.circular(12),
+        border: t.altoContraste ? Border.all(color: CuidaCores.tinta, width: 1.5) : null,
       ),
-      // As amostras já mostram o tamanho; evita dupla ampliação aqui.
-      child: MediaQuery.withNoTextScaling(
-        child: Row(
-          children: [
-            for (final tam in TamanhoTexto.values) ...[
-              if (tam != TamanhoTexto.padrao) const SizedBox(width: 4),
-              Expanded(
-                child: Semantics(
-                  inMutuallyExclusiveGroup: true,
-                  checked: tam == atual,
-                  button: true,
-                  label: 'Tamanho do texto: ${tam.rotulo}',
-                  onTap: () => onChanged(tam),
-                  excludeSemantics: true,
-                  child: Material(
-                    color: tam == atual ? Colors.white : Colors.transparent,
-                    elevation: tam == atual && !t.altoContraste ? 1 : 0,
-                    shadowColor: CuidaCores.azul.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: tam == atual && t.altoContraste
-                          ? const BorderSide(color: CuidaCores.grafite, width: 1.5)
-                          : BorderSide.none,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () => onChanged(tam),
-                      child: SizedBox(
-                        height: 76,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Aa', style: t.serif(amostras[tam]!, lh: amostras[tam]!)),
-                            const SizedBox(height: 6),
-                            Text(
-                              tam.rotulo,
-                              textAlign: TextAlign.center,
-                              style: t.sans(12.5,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        // As amostras já mostram o tamanho; evita dupla ampliação aqui.
+        child: MediaQuery.withNoTextScaling(
+          child: Row(
+            children: [
+              for (final tam in TamanhoTexto.values) ...[
+                if (tam != TamanhoTexto.padrao) const SizedBox(width: 4),
+                Expanded(
+                  child: Semantics(
+                    inMutuallyExclusiveGroup: true,
+                    checked: tam == atual,
+                    button: true,
+                    label: 'Tamanho do texto: ${tam.rotulo}',
+                    onTap: () => onChanged(tam),
+                    excludeSemantics: true,
+                    child: Material(
+                      color: tam == atual ? Colors.white : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(9),
+                        side: tam == atual
+                            ? BorderSide(
+                                color: t.altoContraste ? CuidaCores.tinta : CuidaCores.bordaCampo,
+                                width: t.altoContraste ? 1.5 : 1,
+                              )
+                            : BorderSide.none,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onChanged(tam),
+                        child: SizedBox(
+                          height: 76,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Aa', style: t.titulo(amostras[tam]!, lh: amostras[tam]!)),
+                              const SizedBox(height: 6),
+                              Text(
+                                tam.rotulo,
+                                textAlign: TextAlign.center,
+                                style: t.sans(
+                                  12.5,
                                   lh: 16,
-                                  peso: tam == atual ? FontWeight.w700 : FontWeight.w500,
-                                  cor: CuidaCores.azul),
-                            ),
-                          ],
+                                  peso: tam == atual ? FontWeight.w800 : FontWeight.w600,
+                                  cor: CuidaCores.tinta,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

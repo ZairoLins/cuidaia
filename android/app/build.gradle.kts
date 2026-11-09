@@ -1,22 +1,35 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val chaveRelease = rootProject.file("key.properties")
+val propsChave = Properties().apply {
+    if (chaveRelease.exists()) chaveRelease.inputStream().use { load(it) }
+}
+
 android {
-    namespace = "com.example.cuidaia"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "br.com.cuidaia.app"
+    // flutter_local_notifications 23 exige compileSdk 37.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Necessário para agendar notificações (flutter_local_notifications).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.cuidaia"
+        applicationId = "br.com.cuidaia.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -29,11 +42,23 @@ android {
         versionName = flutter.versionName
     }
 
+    // Chave de upload em android/key.properties + app/upload-keystore.jks (fora do git).
+    // Sem esses arquivos, o release é assinado com a chave de debug.
+    signingConfigs {
+        if (chaveRelease.exists()) {
+            create("release") {
+                keyAlias = propsChave.getProperty("keyAlias")
+                keyPassword = propsChave.getProperty("keyPassword")
+                storeFile = file(propsChave.getProperty("storeFile"))
+                storePassword = propsChave.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig =
+                if (chaveRelease.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }
@@ -46,4 +71,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

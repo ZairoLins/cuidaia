@@ -10,6 +10,9 @@ class CuidaApp extends StatelessWidget {
 
   final AppState estado;
 
+  /// Permite abrir telas de fora da árvore de widgets (ex.: ao tocar numa notificação).
+  static final navegador = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     // Sessão salva pelo Firebase: abre direto no app. Decidido uma vez só;
@@ -28,6 +31,7 @@ class CuidaApp extends StatelessWidget {
           );
           return MaterialApp(
             title: 'CuidaIA',
+            navigatorKey: CuidaApp.navegador,
             debugShowCheckedModeBanner: false,
             theme: construirTema(tema),
             // Tamanho do texto (100%, 115%, 130%) somado ao ajuste do sistema,

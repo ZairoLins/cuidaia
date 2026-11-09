@@ -26,22 +26,23 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
     final dados = AppScope.read(context).exportarDados();
     final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(dados));
     try {
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile.fromData(bytes, mimeType: 'application/json', name: 'cuidaia-meus-dados.json')],
-        fileNameOverrides: ['cuidaia-meus-dados.json'],
-        subject: 'Meus dados no CuidaIA',
-        downloadFallbackEnabled: true,
-      ));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile.fromData(bytes, mimeType: 'application/json', name: 'cuidaia-meus-dados.json')],
+          fileNameOverrides: ['cuidaia-meus-dados.json'],
+          subject: 'Meus dados no CuidaIA',
+          downloadFallbackEnabled: true,
+        ),
+      );
       if (mounted) setState(() => _copiaGerada = true);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível gerar o arquivo. Tente de novo.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Não foi possível gerar o arquivo. Tente de novo.')));
     }
   }
 
-  Future<void> _excluir(String senha) async {
+  Future<void> _excluir(String? senha) async {
     final estado = AppScope.read(context);
     final navegador = Navigator.of(context, rootNavigator: true);
     await estado.excluirConta(senha);
@@ -62,34 +63,45 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
     ];
 
     Widget acao({required String titulo, required String descricao, required Widget controle}) => Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(border: Border(top: BorderSide(color: t.linha))),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titulo, style: t.sans(16, peso: FontWeight.w600, cor: CuidaCores.azul)),
-              const SizedBox(height: 3),
-              Text(descricao, style: t.sans(14, lh: 21, cor: t.mut)),
-              const SizedBox(height: 12),
-              controle,
-            ],
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: t.linha)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titulo,
+            style: t.sans(15, peso: FontWeight.w700, cor: CuidaCores.tinta),
           ),
-        );
+          const SizedBox(height: 3),
+          Text(descricao, style: t.sans(14, lh: 21, cor: t.mut)),
+          const SizedBox(height: 12),
+          controle,
+        ],
+      ),
+    );
 
     Widget confirmado(String texto) => Semantics(
-          liveRegion: true,
-          child: Row(
-            children: [
-              const Icon(Icons.check_circle_outline_rounded, size: 18, color: CuidaCores.verde700),
-              const SizedBox(width: 8),
-              Expanded(child: Text(texto, style: t.sans(14, peso: FontWeight.w500, cor: CuidaCores.verde700))),
-            ],
+      liveRegion: true,
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline_rounded, size: 18, color: CuidaCores.sucesso),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              texto,
+              style: t.sans(14, peso: FontWeight.w600, cor: CuidaCores.sucessoTexto),
+            ),
           ),
-        );
+        ],
+      ),
+    );
 
     return TelaInterna(
       titulo: 'Meus dados',
-      subtitulo: 'Veja o que o CuidaIA guarda sobre você e decida o que fazer com cada informação, como garante a LGPD.',
+      subtitulo:
+          'Veja o que o CuidaIA guarda sobre você e decida o que fazer com cada informação, como garante a LGPD.',
       espaco: 28,
       children: [
         Column(
@@ -102,7 +114,7 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
                 children: [
                   for (final (rotulo, valor) in dados)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -112,7 +124,7 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
                             child: Text(
                               valor,
                               textAlign: TextAlign.right,
-                              style: t.sans(14, peso: FontWeight.w500, cor: CuidaCores.azul),
+                              style: t.sans(14, peso: FontWeight.w700, cor: CuidaCores.tinta),
                             ),
                           ),
                         ],
@@ -124,8 +136,10 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text('Nenhuma informação sobre a sua saúde é guardada no seu perfil.',
-                  style: t.sans(13, lh: 19, cor: t.mut)),
+              child: Text(
+                'Nenhuma informação sobre a sua saúde é guardada no seu perfil.',
+                style: t.sans(13, lh: 19, cor: t.mut),
+              ),
             ),
           ],
         ),
@@ -141,10 +155,7 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   BotaoCompacto('Baixar cópia', preenchido: true, onPressed: _baixarCopia),
-                  if (_copiaGerada) ...[
-                    const SizedBox(height: 10),
-                    confirmado('Arquivo gerado.'),
-                  ],
+                  if (_copiaGerada) ...[const SizedBox(height: 10), confirmado('Arquivo gerado.')],
                 ],
               ),
             ),
@@ -160,19 +171,22 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
               descricao: 'Apaga a conta e todos os dados associados. Não pode ser desfeito.',
               controle: _confirmandoExclusao
                   ? _ConfirmarExclusao(
+                      pedirSenha: u.temSenha,
                       onCancelar: () => setState(() => _confirmandoExclusao = false),
                       onExcluir: _excluir,
                     )
-                  : BotaoCompacto('Excluir conta',
+                  : BotaoCompacto(
+                      'Excluir conta',
                       destrutivo: true,
                       preenchido: true,
-                      onPressed: () => setState(() => _confirmandoExclusao = true)),
+                      onPressed: () => setState(() => _confirmandoExclusao = true),
+                    ),
             ),
           ],
         ),
         TextoComLinks(
           estilo: t.sans(14, lh: 21, cor: t.mut),
-          corLink: CuidaCores.verde700,
+          corLink: CuidaCores.acao,
           trechos: [
             const TrechoTexto('Saiba mais na '),
             TrechoTexto(
@@ -188,12 +202,14 @@ class _MeusDadosScreenState extends State<MeusDadosScreen> {
 }
 
 class _ConfirmarExclusao extends StatefulWidget {
-  const _ConfirmarExclusao({required this.onCancelar, required this.onExcluir});
+  const _ConfirmarExclusao({required this.pedirSenha, required this.onCancelar, required this.onExcluir});
 
+  /// `false` para contas Google: a confirmação abre a janela do Google.
+  final bool pedirSenha;
   final VoidCallback onCancelar;
 
-  /// Recebe a senha digitada; lança [ErroConta] se algo falhar.
-  final Future<void> Function(String senha) onExcluir;
+  /// Recebe a senha digitada (ou `null`); lança [ErroConta] se algo falhar.
+  final Future<void> Function(String? senha) onExcluir;
 
   @override
   State<_ConfirmarExclusao> createState() => _ConfirmarExclusaoState();
@@ -212,7 +228,7 @@ class _ConfirmarExclusaoState extends State<_ConfirmarExclusao> {
 
   Future<void> _excluir() async {
     if (_excluindo) return;
-    if (_senha.text.isEmpty) {
+    if (widget.pedirSenha && _senha.text.isEmpty) {
       setState(() => _erro = 'Digite sua senha para confirmar.');
       return;
     }
@@ -221,9 +237,9 @@ class _ConfirmarExclusaoState extends State<_ConfirmarExclusao> {
       _erro = null;
     });
     try {
-      await widget.onExcluir(_senha.text);
+      await widget.onExcluir(widget.pedirSenha ? _senha.text : null);
     } on ErroConta catch (e) {
-      if (mounted) setState(() => _erro = e.mensagem);
+      if (mounted && !e.cancelado) setState(() => _erro = e.mensagem);
     } finally {
       if (mounted) setState(() => _excluindo = false);
     }
@@ -236,27 +252,50 @@ class _ConfirmarExclusaoState extends State<_ConfirmarExclusao> {
       liveRegion: true,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: CuidaCores.erroFundo, borderRadius: BorderRadius.circular(18)),
+        decoration: BoxDecoration(
+          color: CuidaCores.erroFundo,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: CuidaCores.erroLinha),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text.rich(
-              const TextSpan(children: [
-                TextSpan(text: 'Tem certeza? ', style: TextStyle(fontWeight: FontWeight.w600)),
-                TextSpan(text: 'Você perderá o histórico, os conteúdos salvos e as preferências.'),
-              ]),
+              const TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Tem certeza? ',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  TextSpan(text: 'Você perderá o histórico, os conteúdos salvos e as preferências.'),
+                ],
+              ),
               style: t.sans(14, lh: 21, cor: CuidaCores.erroTitulo),
             ),
             const SizedBox(height: 14),
-            CuidaCampo(
-              rotulo: 'Sua senha',
-              controller: _senha,
-              oculto: true,
-              autofill: const [AutofillHints.password],
-              acaoTeclado: TextInputAction.done,
-              aoEnviar: (_) => _excluir(),
-              erro: _erro,
-            ),
+            if (widget.pedirSenha)
+              CuidaCampo(
+                rotulo: 'Sua senha',
+                controller: _senha,
+                oculto: true,
+                autofill: const [AutofillHints.password],
+                acaoTeclado: TextInputAction.done,
+                aoEnviar: (_) => _excluir(),
+                erro: _erro,
+              )
+            else ...[
+              Text(
+                'Para confirmar, vamos pedir que você escolha de novo a sua conta Google.',
+                style: t.sans(14, lh: 21, cor: CuidaCores.erroTitulo),
+              ),
+              if (_erro != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _erro!,
+                  style: t.sans(13, peso: FontWeight.w500, cor: CuidaCores.erro),
+                ),
+              ],
+            ],
             const SizedBox(height: 14),
             Row(
               children: [
@@ -264,20 +303,25 @@ class _ConfirmarExclusaoState extends State<_ConfirmarExclusao> {
                   child: OutlinedButton(
                     onPressed: _excluindo ? null : widget.onCancelar,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: CuidaCores.azul,
+                      foregroundColor: CuidaCores.tinta,
                       backgroundColor: Colors.white,
                       side: BorderSide(color: t.bordaBotao, width: t.larguraBorda),
                       minimumSize: const Size.fromHeight(48),
-                      shape: const StadiumBorder(),
-                      textStyle: t.sans(15, peso: FontWeight.w600),
+                      shape: CuidaRaio.formaBotao,
+                      textStyle: t.sans(15, peso: FontWeight.w700),
                     ),
                     child: const Text('Cancelar'),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: BotaoPrimario('Excluir',
-                      altura: 48, cor: CuidaCores.erro, carregando: _excluindo, onPressed: _excluir),
+                  child: BotaoPrimario(
+                    'Excluir',
+                    altura: 48,
+                    cor: CuidaCores.erro,
+                    carregando: _excluindo,
+                    onPressed: _excluir,
+                  ),
                 ),
               ],
             ),

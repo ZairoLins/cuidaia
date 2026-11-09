@@ -23,7 +23,11 @@ class CuidaCampo extends StatelessWidget {
     this.onChanged,
     this.acaoTeclado,
     this.aoEnviar,
+    this.somenteLeitura = false,
   });
+
+  /// Mostra o valor sem permitir edição (ex.: e-mail de quem entra com o Google).
+  final bool somenteLeitura;
 
   final String rotulo;
   final TextEditingController controller;
@@ -53,21 +57,25 @@ class CuidaCampo extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tema;
     final temErro = erro != null || invalido;
-    final corBorda = temErro ? CuidaCores.erro : (valido ? CuidaCores.verde700 : t.borda);
+    final corBorda = temErro ? CuidaCores.erro : (valido ? CuidaCores.acao : t.borda);
     final largura = temErro ? 1.5 : t.larguraBorda;
     OutlineInputBorder borda(Color cor, double w) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: cor, width: w),
-        );
+      borderRadius: BorderRadius.circular(CuidaRaio.campo),
+      borderSide: BorderSide(color: cor, width: w),
+    );
 
     final textoRotulo = Text.rich(
       TextSpan(
         text: rotulo,
         children: [
-          if (rotuloOpcional) TextSpan(text: ' Opcional', style: t.sans(14, cor: t.mut)),
+          if (rotuloOpcional)
+            TextSpan(
+              text: ' Opcional',
+              style: t.sans(14, cor: t.mut),
+            ),
         ],
       ),
-      style: t.sans(14, peso: FontWeight.w500, cor: CuidaCores.azul),
+      style: t.sans(14, peso: FontWeight.w600, cor: CuidaCores.tinta),
     );
 
     return Column(
@@ -77,14 +85,16 @@ class CuidaCampo extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(child: ExcludeSemantics(child: textoRotulo)),
-            if (acaoRotulo != null) acaoRotulo!,
+            ?acaoRotulo,
           ],
         ),
-        SizedBox(height: acaoRotulo == null ? 8 : 0),
+        SizedBox(height: acaoRotulo == null ? 6 : 0),
         Semantics(
           label: rotulo,
+          readOnly: somenteLeitura,
           child: TextField(
             controller: controller,
+            readOnly: somenteLeitura,
             obscureText: oculto,
             enableSuggestions: !oculto,
             autocorrect: !oculto,
@@ -96,28 +106,30 @@ class CuidaCampo extends StatelessWidget {
             style: t.sans(16),
             decoration: InputDecoration(
               hintText: dica,
-              hintStyle: t.sans(16, cor: CuidaCores.placeholder),
+              hintStyle: t.sans(16, cor: CuidaCores.apoioClaro),
               filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+              fillColor: somenteLeitura ? CuidaCores.fundoSuave : Colors.white,
+              // 48 px de altura, como no protótipo.
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               border: borda(corBorda, largura),
               enabledBorder: borda(corBorda, largura),
-              focusedBorder: borda(temErro ? CuidaCores.erro : CuidaCores.verde700, 2),
+              focusedBorder: borda(temErro ? CuidaCores.erro : CuidaCores.acao, 2),
               suffixIcon: sufixo,
               errorText: null,
             ),
           ),
         ),
         if (abaixo != null) ...[const SizedBox(height: 10), abaixo!],
-        if (ajuda != null) ...[
-          const SizedBox(height: 8),
-          Text(ajuda!, style: t.sans(13, lh: 19, cor: t.mut)),
-        ],
+        if (ajuda != null) ...[const SizedBox(height: 6), Text(ajuda!, style: t.sans(13, lh: 19, cor: t.mut))],
         if (erro != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Semantics(
             liveRegion: true,
-            child: Text(erro!, style: t.sans(13, peso: FontWeight.w500, cor: CuidaCores.erro)),
+            child: Text(
+              erro!,
+              style: t.sans(13, lh: 18, peso: FontWeight.w600, cor: CuidaCores.erro),
+            ),
           ),
         ],
       ],
@@ -135,12 +147,14 @@ class BotaoVerSenha extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 4),
       child: IconButton(
         onPressed: onPressed,
         tooltip: visivel ? 'Ocultar senha' : 'Mostrar senha',
-        color: CuidaCores.azul,
-        icon: Icon(visivel ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 22),
+        color: CuidaCores.apoio,
+        style: IconButton.styleFrom(shape: CuidaRaio.formaChip),
+        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        icon: Icon(visivel ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
       ),
     );
   }
@@ -167,24 +181,29 @@ class RequisitosSenha extends StatelessWidget {
       runSpacing: 6,
       children: [
         for (final r in itens)
-          Builder(builder: (context) {
-            final cor = r.ok ? CuidaCores.verde700 : (tentou ? CuidaCores.erro : t.mut);
-            final icone = r.ok
-                ? Icons.check_rounded
-                : (tentou ? Icons.close_rounded : Icons.radio_button_unchecked_rounded);
-            return Semantics(
-              label: '${r.texto}: ${r.ok ? 'atendido' : 'pendente'}',
-              excludeSemantics: true,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icone, size: 15, color: cor),
-                  const SizedBox(width: 6),
-                  Text(r.texto, style: t.sans(13, peso: FontWeight.w500, cor: cor)),
-                ],
-              ),
-            );
-          }),
+          Builder(
+            builder: (context) {
+              final cor = r.ok ? CuidaCores.acao : (tentou ? CuidaCores.erro : t.mut);
+              final icone = r.ok
+                  ? Icons.check_rounded
+                  : (tentou ? Icons.close_rounded : Icons.radio_button_unchecked_rounded);
+              return Semantics(
+                label: '${r.texto}: ${r.ok ? 'atendido' : 'pendente'}',
+                excludeSemantics: true,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icone, size: 15, color: cor),
+                    const SizedBox(width: 6),
+                    Text(
+                      r.texto,
+                      style: t.sans(13, peso: FontWeight.w500, cor: cor),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
       ],
     );
   }
@@ -192,10 +211,10 @@ class RequisitosSenha extends StatelessWidget {
 
 /// Validação de senha usada no cadastro e na troca de senha.
 List<RequisitoSenha> requisitosSenha(String senha) => [
-      RequisitoSenha('8 caracteres', senha.length >= 8),
-      RequisitoSenha('Uma letra', RegExp(r'[A-Za-zÀ-ú]').hasMatch(senha)),
-      RequisitoSenha('Um número', RegExp(r'\d').hasMatch(senha)),
-    ];
+  RequisitoSenha('8 caracteres', senha.length >= 8),
+  RequisitoSenha('Uma letra', RegExp(r'[A-Za-zÀ-ú]').hasMatch(senha)),
+  RequisitoSenha('Um número', RegExp(r'\d').hasMatch(senha)),
+];
 
 final _regexEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
 bool emailValido(String email) => _regexEmail.hasMatch(email.trim());

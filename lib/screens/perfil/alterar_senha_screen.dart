@@ -32,9 +32,9 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
   }
 
   List<RequisitoSenha> get _reqs => [
-        ...requisitosSenha(_nova.text),
-        RequisitoSenha('Diferente da atual', _nova.text.isNotEmpty && _nova.text != _atual.text),
-      ];
+    ...requisitosSenha(_nova.text),
+    RequisitoSenha('Diferente da atual', _nova.text.isNotEmpty && _nova.text != _atual.text),
+  ];
   bool get _novaOk => _reqs.every((r) => r.ok);
   bool get _confOk => _conf.text.isNotEmpty && _conf.text == _nova.text;
 
@@ -86,10 +86,10 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
                 children: [
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Icon(Icons.check_circle_outline_rounded, size: 36, color: CuidaCores.verde700),
+                    child: Icon(Icons.check_circle_outline_rounded, size: 36, color: CuidaCores.acao),
                   ),
                   const SizedBox(height: 12),
-                  Text('Senha alterada', style: t.serif(23)),
+                  Text('Senha alterada', style: t.titulo(23)),
                   const SizedBox(height: 12),
                   Text(
                     'Use a nova senha na próxima vez que entrar. Se não foi você quem pediu a troca, use "Esqueci minha senha" na tela de entrada.',
@@ -164,8 +164,10 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
                 if (_erroServidor != null) ...[
                   Semantics(
                     liveRegion: true,
-                    child: Text(_erroServidor!,
-                        style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro)),
+                    child: Text(
+                      _erroServidor!,
+                      style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
+                    ),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -174,7 +176,7 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   style: TextButton.styleFrom(
-                    foregroundColor: CuidaCores.azul,
+                    foregroundColor: CuidaCores.tinta,
                     minimumSize: const Size.fromHeight(48),
                     textStyle: t.sans(15, peso: FontWeight.w600),
                   ),

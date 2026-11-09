@@ -1,6 +1,10 @@
 import 'dart:ui' show Color;
 
 import '../theme/cuida_tema.dart';
+import 'instrucoes_assistente.dart';
+
+export 'instrucoes_assistente.dart' show NivelSugerido;
+export 'triagem.dart';
 
 /// Resposta educativa do assistente, sempre com a fonte oficial.
 class RespostaEducativa {
@@ -9,13 +13,42 @@ class RespostaEducativa {
     required this.fonte,
     required this.url,
     this.oferecerOrientacao = false,
+    this.nivel,
+    this.justificativa,
   });
 
   final List<String> paragrafos;
   final String fonte;
   final String url;
   final bool oferecerOrientacao;
+
+  /// Nível de atenção sugerido pela IA (classificação orientativa, não diagnóstico).
+  final NivelSugerido? nivel;
+
+  /// Por que a situação descrita combina com o nível sugerido.
+  final String? justificativa;
+
+  /// Serviço a mostrar como sugestão, ou null quando não há sugestão.
+  Servico? get servicoSugerido => servicoDoNivel(nivel);
 }
+
+/// Card de serviço que corresponde a cada nível sugerido pela IA.
+Servico? servicoDoNivel(NivelSugerido? nivel) => switch (nivel) {
+  NivelSugerido.primaria => servicos['ubs'],
+  NivelSugerido.secundaria => servicos['secundaria'],
+  NivelSugerido.terciaria => servicos['terciaria'],
+  NivelSugerido.urgencia => servicos['upa'],
+  NivelSugerido.psicossocial => servicos['mental'],
+  NivelSugerido.naoSeAplica || null => null,
+};
+
+/// Artigo da aba Aprenda sobre o nível, quando existe.
+String? artigoDoNivel(NivelSugerido? nivel) => switch (nivel) {
+  NivelSugerido.primaria => 'primaria',
+  NivelSugerido.secundaria => 'secundaria',
+  NivelSugerido.terciaria => 'terciaria',
+  _ => null,
+};
 
 class AcaoLigar {
   const AcaoLigar(this.texto, this.numero);
@@ -34,6 +67,7 @@ class Servico {
     this.acao,
     this.extra,
     this.urgente = false,
+    this.mapa,
   });
 
   final String chave;
@@ -44,6 +78,17 @@ class Servico {
   final AcaoLigar? acao;
   final String? extra;
   final bool urgente;
+
+  /// Busca no app de mapas do celular ("Ver UBS perto de mim"). Fica de fora
+  /// no SAMU: com risco à vida, a orientação é ligar 192, não se deslocar.
+  final BuscaMapa? mapa;
+}
+
+/// Tipo de unidade buscado no mapa: o rótulo do botão e o termo da busca.
+class BuscaMapa {
+  const BuscaMapa(this.rotulo, this.termo);
+  final String rotulo;
+  final String termo;
 }
 
 class OpcaoAtendimento {
@@ -75,6 +120,7 @@ const servicos = <String, Servico>{
       'Lá, a equipe faz a classificação de risco: quem está em situação mais grave é atendido primeiro',
     ],
     extra: 'Se a situação piorar, ligue 192.',
+    mapa: BuscaMapa('Ver UPAs perto de mim', 'UPA 24h'),
   ),
   'ubs': Servico(
     chave: 'ubs',
@@ -86,6 +132,33 @@ const servicos = <String, Servico>{
       'Leve documento com foto, Cartão SUS ou CPF e comprovante de endereço',
     ],
     extra: 'Se precisar de um especialista, a própria equipe da UBS faz o encaminhamento.',
+    mapa: BuscaMapa('Ver UBS perto de mim', 'Unidade Básica de Saúde'),
+  ),
+  'secundaria': Servico(
+    chave: 'secundaria',
+    nivel: 'Atenção Secundária · por encaminhamento',
+    titulo: 'Comece pela sua UBS',
+    texto: 'Consultas com especialistas e exames especializados são feitos em ambulatórios e policlínicas. No SUS, o acesso a eles acontece por encaminhamento: a equipe da UBS avalia sua situação e, se for preciso, encaminha você.',
+    lista: [
+      'Leve documento com foto, Cartão SUS ou CPF e os exames e receitas que já tiver',
+      'O pedido entra na regulação, que organiza o atendimento de acordo com a prioridade de cada caso',
+      'Depois da consulta com o especialista, a UBS continua acompanhando você',
+    ],
+    extra: 'Se a situação piorar de repente, procure uma UPA ou ligue 192.',
+    mapa: BuscaMapa('Ver UBS perto de mim', 'Unidade Básica de Saúde'),
+  ),
+  'terciaria': Servico(
+    chave: 'terciaria',
+    nivel: 'Atenção Terciária · por encaminhamento',
+    titulo: 'O acesso é por encaminhamento',
+    texto: 'Cirurgias complexas, tratamento de câncer, transplantes e internações especializadas são feitos em hospitais de referência. Fora das urgências, o acesso acontece por encaminhamento da UBS ou do especialista que já acompanha você.',
+    lista: [
+      'Se você ainda não tem acompanhamento, comece pela UBS',
+      'Se já tem, converse com a equipe que acompanha você sobre o encaminhamento',
+      'Guarde laudos, exames e receitas: eles ajudam na regulação do seu caso',
+    ],
+    extra: 'Em uma emergência, ligue 192 ou vá ao pronto-socorro.',
+    mapa: BuscaMapa('Ver UBS perto de mim', 'Unidade Básica de Saúde'),
   ),
   'mental': Servico(
     chave: 'mental',
@@ -98,17 +171,35 @@ const servicos = <String, Servico>{
     ],
     acao: AcaoLigar('Ligar 188 (CVV)', '188'),
     extra: 'Conversar com alguém de confiança também ajuda.',
+    mapa: BuscaMapa('Ver CAPS perto de mim', 'Centro de Atenção Psicossocial CAPS'),
   ),
 };
 
 const opcoesAtendimento = [
-  OpcaoAtendimento('samu', 'Risco à vida agora',
-      'Dor forte no peito, falta de ar intensa, desmaio, sinais de AVC, sangramento grave', CuidaCores.erro),
-  OpcaoAtendimento('upa', 'Preciso de atendimento hoje',
-      'Febre alta, corte, queda, dor forte que não passa — sem risco imediato à vida', CuidaCores.laranja),
-  OpcaoAtendimento('ubs', 'Pode esperar alguns dias', 'Consulta, acompanhamento, vacina, receita, exames de rotina',
-      CuidaCores.verde700),
-  OpcaoAtendimento('mental', 'Sofrimento emocional', 'Angústia, tristeza persistente, crise de ansiedade', CuidaCores.azul),
+  OpcaoAtendimento(
+    'samu',
+    'Risco à vida agora',
+    'Dor forte no peito, falta de ar intensa, desmaio, sinais de AVC, sangramento grave',
+    CuidaCores.erro,
+  ),
+  OpcaoAtendimento(
+    'upa',
+    'Preciso de atendimento hoje',
+    'Febre alta, corte, queda, dor forte que não passa — sem risco imediato à vida',
+    CuidaCores.alerta,
+  ),
+  OpcaoAtendimento(
+    'ubs',
+    'Pode esperar alguns dias',
+    'Consulta, acompanhamento, vacina, receita, exames de rotina',
+    CuidaCores.acao,
+  ),
+  OpcaoAtendimento(
+    'mental',
+    'Sofrimento emocional',
+    'Angústia, tristeza persistente, crise de ansiedade',
+    CuidaCores.tinta,
+  ),
 ];
 
 const perguntasSugeridas = [
@@ -116,27 +207,6 @@ const perguntasSugeridas = [
   'Qual é a função da Atenção Primária?',
   'Qual a diferença entre os níveis de atenção?',
 ];
-
-enum Classificacao { samu, mental, orientar }
-
-/// Triagem por palavras-chave: situações de risco nunca vão para a IA.
-Classificacao? classificar(String texto) {
-  final x = texto.toLowerCase();
-  bool tem(List<String> termos) => termos.any(x.contains);
-  if (tem(['suicid', 'me matar', 'tirar minha vida', 'tirar a minha vida', 'me machucar', 'acabar com tudo',
-      'não quero mais viver', 'nao quero mais viver'])) {
-    return Classificacao.mental;
-  }
-  if (tem(['dor no peito', 'falta de ar', 'não consigo respirar', 'nao consigo respirar', 'desmai', 'avc', 'derrame',
-      'convuls', 'sangramento', 'sangrando muito', 'infarto', 'inconsciente', 'envenen', 'engasg'])) {
-    return Classificacao.samu;
-  }
-  if (tem(['onde procurar', 'onde ir', 'onde devo', 'qual serviço', 'qual servico', 'onde ser atendid',
-      'onde buscar atendimento'])) {
-    return Classificacao.orientar;
-  }
-  return null;
-}
 
 /// Ponto de integração com o modelo de IA. Em produção: `AssistenteGemini`
 /// (lib/data/assistente_gemini.dart); nos testes: [AssistenteLocal].

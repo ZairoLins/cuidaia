@@ -9,7 +9,7 @@ import 'perfil/perfil_screen.dart';
 
 enum Aba {
   inicio('Início', Icons.home_outlined, Icons.home_rounded),
-  chat('Chat', Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded),
+  chat('Assistente', Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded),
   aprenda('Aprenda', Icons.menu_book_outlined, Icons.menu_book_rounded),
   perfil('Perfil', Icons.person_outline_rounded, Icons.person_rounded);
 
@@ -58,7 +58,7 @@ class HomeShellState extends State<HomeShell> {
   }
 }
 
-/// Item ativo: barra superior verde-água, ícone preenchido e rótulo em negrito — nunca só a cor.
+/// Item ativo: pílula verde 50 atrás do ícone, ícone preenchido e rótulo em negrito — nunca só a cor.
 class NavInferior extends StatelessWidget {
   const NavInferior({super.key, required this.ativa, required this.aoSelecionar});
 
@@ -71,12 +71,14 @@ class NavInferior extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: t.linha, width: t.larguraBorda)),
+        border: Border(
+          top: BorderSide(color: t.linha, width: t.larguraBorda),
+        ),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
           // Rótulos curtos: limita a ampliação para não estourar a barra.
           child: MediaQuery.withClampedTextScaling(
             maxScaleFactor: 1.3,
@@ -105,7 +107,7 @@ class _ItemNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tema;
-    final cor = ativo ? CuidaCores.azul : t.mut;
+    final cor = ativo ? CuidaCores.acaoEscuro : t.mut;
     return Semantics(
       selected: ativo,
       button: true,
@@ -114,36 +116,29 @@ class _ItemNav extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(CuidaRaio.botao),
         child: SizedBox(
-          height: 56,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
+          height: 52,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Positioned(
-                top: -4,
-                child: Container(
-                  width: 32,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: ativo ? CuidaCores.verde : Colors.transparent,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
-                  ),
+              AnimatedContainer(
+                duration: t.duracao(const Duration(milliseconds: 160)),
+                width: 52,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: ativo ? (t.altoContraste ? Colors.white : CuidaCores.verde50) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: ativo && t.altoContraste ? Border.all(color: CuidaCores.acaoEscuro, width: 1.5) : null,
                 ),
+                child: Icon(ativo ? aba.iconeAtivo : aba.icone, size: 21, color: cor),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(ativo ? aba.iconeAtivo : aba.icone, size: 24, color: cor),
-                  const SizedBox(height: 4),
-                  Text(
-                    aba.rotulo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: t.sans(12, peso: ativo ? FontWeight.w700 : FontWeight.w500, cor: cor),
-                  ),
-                ],
+              const SizedBox(height: 3),
+              Text(
+                aba.rotulo,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.sans(11.5, peso: ativo ? FontWeight.w700 : FontWeight.w600, cor: cor),
               ),
             ],
           ),

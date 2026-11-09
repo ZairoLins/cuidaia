@@ -102,7 +102,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
       final estado = AppScope.read(context);
       final atual = estado.usuario;
       final mudouEmail = await estado.salvarUsuario(
-        Usuario(nome: nome, apelido: _apelido.text.trim(), email: email, foto: _foto),
+        atual.copyWith(nome: nome, apelido: _apelido.text.trim(), email: email, foto: _foto, semFoto: _foto == null),
       );
       if (!mounted) return;
       setState(() {
@@ -142,10 +142,13 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 children: [
                   BotaoCompacto(_foto == null ? 'Adicionar foto' : 'Alterar foto', onPressed: _escolherFoto),
                   if (_foto != null)
-                    BotaoCompacto('Remover', onPressed: () {
-                      setState(() => _foto = null);
-                      _mudou('');
-                    }),
+                    BotaoCompacto(
+                      'Remover',
+                      onPressed: () {
+                        setState(() => _foto = null);
+                        _mudou('');
+                      },
+                    ),
                 ],
               ),
             ),
@@ -173,7 +176,10 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
           controller: _email,
           teclado: TextInputType.emailAddress,
           autofill: const [AutofillHints.email],
-          ajuda: 'Se mudar o e-mail, enviaremos um link de confirmação para o novo endereço.',
+          somenteLeitura: !AppScope.of(context).usuario.temSenha,
+          ajuda: AppScope.of(context).usuario.temSenha
+              ? 'Se mudar o e-mail, enviaremos um link de confirmação para o novo endereço.'
+              : 'Você entra com o Google, então este é o e-mail da sua conta Google.',
           onChanged: _mudou,
         ),
         Column(
@@ -182,7 +188,10 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
             if (_erro != null) ...[
               Semantics(
                 liveRegion: true,
-                child: Text(_erro!, style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro)),
+                child: Text(
+                  _erro!,
+                  style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
+                ),
               ),
               const SizedBox(height: 12),
             ],
@@ -191,7 +200,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: CuidaCores.azul,
+                foregroundColor: CuidaCores.tinta,
                 minimumSize: const Size.fromHeight(48),
                 textStyle: t.sans(15, peso: FontWeight.w600),
               ),
