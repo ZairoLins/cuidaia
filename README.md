@@ -229,7 +229,7 @@ Os detalhes estão em [avaliacao/README.md](avaliacao/README.md).
 
 ## Privacidade
 
-- O app pede só nome, e-mail e senha, e não pede dados de saúde.
+- O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. Ele não pede dados de saúde.
 - As preferências e as conversas ficam só no aparelho.
 - O texto das perguntas livres vai ao Gemini sem nome e sem e-mail.
 - A localização não é coletada.

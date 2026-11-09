@@ -136,7 +136,7 @@ class PerfilScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 2),
                 child: NotaApoio(
                   texto:
-                      'Seu perfil guarda apenas nome e e-mail. Nenhuma informação sobre a sua saúde fica salva aqui.',
+                      'Seu perfil guarda apenas nome, apelido, e-mail e, se você quiser, uma foto. Nenhuma informação sobre a sua saúde fica salva aqui.',
                 ),
               ),
               const SizedBox(height: 16),

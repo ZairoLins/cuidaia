@@ -738,7 +738,7 @@ o contato do encarregado: Zairo Lins Ribeiro Cunha, zairolins15@gmail.com.
 
 ### 9.3 Minimização
 
-O app pede só nome, e-mail e senha, e não pede dados de saúde. Além disso:
+O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. Ele não pede dados de saúde. Além disso:
 - o chat avisa para não escrever CPF, endereço ou detalhes de saúde;
 - as preferências ficam só no aparelho;
 - as notificações não levam dados pessoais.
