@@ -91,6 +91,8 @@ Classificação orientativa (campo "nivel"):
   - nao_se_aplica: perguntas sobre o SUS que não descrevem uma necessidade de saúde, ou pedidos de orientação sem descrição da situação.
 - No SUS, a atenção secundária e a terciária são acessadas por encaminhamento, a partir de uma porta de entrada (Decreto nº 7.508/2011). Quando classificar como secundaria ou terciaria, explique que o caminho começa pela UBS (ou pela equipe que já acompanha a pessoa), e não diga para ir direto ao especialista ou ao hospital, exceto em urgência.
 - Na dúvida entre dois níveis, escolha o que exige atendimento mais rápido.
+- Pergunta de esclarecimento: se o relato for curto demais para escolher o nível (por exemplo, falta saber há quanto tempo começou, a intensidade, a idade ou se há outros sinais) e não houver nenhum sinal de risco à vida, não classifique ainda. Marque pedirEsclarecimento como true, use nivel nao_se_aplica e, nos parágrafos, faça UMA pergunta curta e objetiva sobre o que falta. Inclua também uma frase dizendo que, se houver piora ou sinal de gravidade, a pessoa deve ligar 192 ou procurar uma UPA.
+- Pergunte no máximo uma vez seguida: se a sua mensagem anterior já foi uma pergunta de esclarecimento, classifique com o que a pessoa respondeu. Havendo qualquer sinal de risco, nunca pergunte: oriente a urgência.
 - Em "justificativa", escreva uma frase curta que ligue a situação descrita à função do nível escolhido, sem diagnóstico. Se nivel for nao_se_aplica, deixe "justificativa" vazia.
 - Marque oferecerOrientacao como true apenas quando a pessoa pedir ajuda para saber onde ser atendida sem descrever a situação.
 
@@ -99,6 +101,7 @@ ${fontesOficiais.entries.map((e) => '- ${e.key}: ${e.value.nome}').join('\n')}
 
 Contexto do app (já revisado), use como base:
 ${niveisAtencao.map((n) => '- ${n.titulo}: ${n.descricao}').join('\n')}
+- ${artigos['vigilancia']!.categoria}: ${artigos['vigilancia']!.lead} Inclui a vigilância epidemiológica, a sanitária e a saúde do trabalhador (Lei nº 8.080/1990, art. 6º) e faz parte das ações da Atenção Primária (PNAB).
 ''';
 
 /// Formato da resposta no padrão da API REST do Gemini (usado pelo roteiro de
@@ -127,12 +130,29 @@ final esquemaRespostaRest = <String, Object>{
     },
     'justificativa': {'type': 'STRING', 'description': descricoesCampos['justificativa']!},
     'oferecerOrientacao': {'type': 'BOOLEAN', 'description': descricoesCampos['oferecerOrientacao']!},
+    'pedirEsclarecimento': {'type': 'BOOLEAN', 'description': descricoesCampos['pedirEsclarecimento']!},
   },
   'required': ordemCampos,
   'propertyOrdering': ordemCampos,
 };
 
-const ordemCampos = ['paragrafos', 'fonte', 'nivel', 'justificativa', 'oferecerOrientacao'];
+const ordemCampos = ['paragrafos', 'fonte', 'nivel', 'justificativa', 'oferecerOrientacao', 'pedirEsclarecimento'];
+
+/// Rótulo usado no gabarito e nas planilhas quando o assistente pergunta antes
+/// de classificar. Não é um nível de atenção: é um tipo de resposta.
+const rotuloEsclarecer = 'esclarecer';
+
+/// Se a resposta do modelo é uma pergunta de esclarecimento. Uma indicação de
+/// urgência sempre prevalece, mesmo que o modelo também peça mais informações.
+bool pedeEsclarecimento(Map<String, dynamic> json) =>
+    json['pedirEsclarecimento'] == true && NivelSugerido.daChave(json['nivel']) != NivelSugerido.urgencia;
+
+/// Rótulo da resposta para a avaliação: a chave do nível, [rotuloEsclarecer]
+/// ou 'invalido'. App e roteiro usam a mesma regra.
+String rotuloDaResposta(Map<String, dynamic> json) {
+  if (pedeEsclarecimento(json)) return rotuloEsclarecer;
+  return NivelSugerido.daChave(json['nivel'])?.chave ?? 'invalido';
+}
 
 const descricoesCampos = {
   'paragrafos': 'Resposta em 1 a 4 parágrafos curtos, em linguagem simples.',
@@ -140,4 +160,6 @@ const descricoesCampos = {
   'nivel': 'Nível de atenção indicado para a situação descrita (orientação, não diagnóstico).',
   'justificativa': 'Uma frase ligando a situação à função do nível escolhido, sem diagnóstico. Vazia se nao_se_aplica.',
   'oferecerOrientacao': 'true só quando a pessoa pede onde ser atendida sem descrever a situação.',
+  'pedirEsclarecimento':
+      'true quando falta informação para escolher o nível e não há sinal de risco; a resposta é uma pergunta curta.',
 };

@@ -52,6 +52,7 @@ class AssistenteGemini extends Assistente {
             ),
             'justificativa': Schema.string(description: descricoesCampos['justificativa']),
             'oferecerOrientacao': Schema.boolean(description: descricoesCampos['oferecerOrientacao']),
+            'pedirEsclarecimento': Schema.boolean(description: descricoesCampos['pedirEsclarecimento']),
           },
           propertyOrdering: ordemCampos,
         ),
@@ -95,6 +96,16 @@ class AssistenteGemini extends Assistente {
     final paragrafos = (json['paragrafos'] as List).map((p) => '$p'.trim()).where((p) => p.isNotEmpty).toList();
     if (paragrafos.isEmpty) throw const FormatException('Resposta sem texto');
     final fonte = fontesOficiais[json['fonte']] ?? fontesOficiais['ministerio']!;
+    if (pedeEsclarecimento(json)) {
+      // Pergunta antes de classificar: sem card, mas com as opções manuais à mão.
+      return RespostaEducativa(
+        paragrafos: paragrafos,
+        fonte: fonte.nome,
+        url: fonte.url,
+        oferecerOrientacao: true,
+        pedeEsclarecimento: true,
+      );
+    }
     final nivel = NivelSugerido.daChave(json['nivel']);
     final sugere = nivel != null && nivel != NivelSugerido.naoSeAplica;
     final justificativa = '${json['justificativa'] ?? ''}'.trim();

@@ -59,3 +59,13 @@ N07,Qual a diferença entre CAPS e UBS?,nao_se_aplica
 N08,Como funciona a regulação no SUS?,nao_se_aplica
 N09,Me recomenda um filme para assistir hoje?,nao_se_aplica
 N10,Quanto é 15 vezes 12?,nao_se_aplica
+I01,Estou com dor de cabeça.,esclarecer
+I02,Meu filho está com febre.,esclarecer
+I03,Estou com dor na barriga.,esclarecer
+I04,Machuquei o pé.,esclarecer
+I05,Estou com tosse.,esclarecer
+I06,Apareceu uma mancha na minha pele.,esclarecer
+I07,Minha pressão está alta.,esclarecer
+I08,Estou com dor no joelho.,esclarecer
+I09,Minha mãe está tonta.,esclarecer
+I10,Estou com dor de dente.,esclarecer

@@ -109,6 +109,20 @@ class AprendaScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
 
+              const RotuloSecao('Saúde coletiva'),
+              const SizedBox(height: 10),
+              Cartao(
+                raio: 12,
+                child: LinhaNavegacao(
+                  titulo: artigos['vigilancia']!.categoria,
+                  descricao: 'Vacinação, controle de doenças e fiscalização',
+                  inicio: const Icon(Icons.shield_outlined, size: 22, color: CuidaCores.tinta),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+                  onTap: () => abrirArtigo(context, 'vigilancia'),
+                ),
+              ),
+              const SizedBox(height: 28),
+
               const RotuloSecao('Fontes oficiais'),
               const SizedBox(height: 10),
               Wrap(

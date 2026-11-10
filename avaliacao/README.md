@@ -5,9 +5,9 @@ Material para o objetivo específico 4 do TCC: verificar se o nível de atençã
 ## Arquivos
 
 - `cenarios.csv` traz os cenários simulados, com as colunas `id`, `texto` e `esperado`.
-  - São 60 cenários, 10 por nível. O gabarito precisa ser revisado por um profissional de saúde (ou pelo orientador) antes da rodada oficial.
+  - São 70 cenários: 10 para cada um dos seis níveis e 10 relatos incompletos (I01 a I10), em que a resposta esperada é uma pergunta de esclarecimento. O gabarito precisa ser revisado por um profissional de saúde (ou pelo orientador) antes da rodada oficial.
   - Três cenários (U04, U06 e M07) contêm palavras-chave de risco e são resolvidos pela primeira camada, sem chamar o modelo.
-  - Valores aceitos em `esperado`: `primaria`, `secundaria`, `terciaria`, `urgencia`, `psicossocial`, `nao_se_aplica`.
+  - Valores aceitos em `esperado`: `primaria`, `secundaria`, `terciaria`, `urgencia`, `psicossocial`, `nao_se_aplica` e `esclarecer` (o assistente pergunta antes de classificar; não é um nível de atenção). Cada cenário é enviado como conversa nova, então a avaliação mede se o assistente pergunta, mas não a classificação feita depois da resposta da pessoa.
 - `resultados.csv` é gravado a cada execução, com uma linha por cenário e repetição (outro nome pode ser escolhido com `--saida`).
 
 ## Como rodar

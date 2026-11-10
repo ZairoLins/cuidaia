@@ -15,12 +15,16 @@ class RespostaEducativa {
     this.oferecerOrientacao = false,
     this.nivel,
     this.justificativa,
+    this.pedeEsclarecimento = false,
   });
 
   final List<String> paragrafos;
   final String fonte;
   final String url;
   final bool oferecerOrientacao;
+
+  /// O assistente pediu mais informações antes de sugerir um nível.
+  final bool pedeEsclarecimento;
 
   /// Nível de atenção sugerido pela IA (classificação orientativa, não diagnóstico).
   final NivelSugerido? nivel;

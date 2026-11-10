@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cuidaia/data/assistente.dart';
+import 'package:cuidaia/data/instrucoes_assistente.dart' show rotuloDaResposta, rotuloEsclarecer;
 import 'package:cuidaia/data/assistente_gemini.dart';
 import 'package:cuidaia/state/chat_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +35,27 @@ void main() {
       expect(r.servicoSugerido, isNull);
       expect(r.justificativa, isNull);
       expect(r.oferecerOrientacao, isTrue);
+    });
+
+    test('pergunta de esclarecimento não sugere serviço e oferece as opções manuais', () {
+      const json =
+          '{"paragrafos": ["Há quanto tempo começou a dor?"], "fonte": "ministerio", "nivel": "nao_se_aplica", '
+          '"justificativa": "", "oferecerOrientacao": false, "pedirEsclarecimento": true}';
+      final r = AssistenteGemini.converter(json);
+      expect(r.pedeEsclarecimento, isTrue);
+      expect(r.servicoSugerido, isNull);
+      expect(r.oferecerOrientacao, isTrue);
+      expect(rotuloDaResposta(jsonDecode(json) as Map<String, dynamic>), rotuloEsclarecer);
+    });
+
+    test('urgência prevalece sobre o pedido de esclarecimento', () {
+      const json =
+          '{"paragrafos": ["Procure uma UPA."], "fonte": "decreto7508", "nivel": "urgencia", '
+          '"justificativa": "Precisa de atendimento hoje.", "pedirEsclarecimento": true}';
+      final r = AssistenteGemini.converter(json);
+      expect(r.pedeEsclarecimento, isFalse);
+      expect(r.servicoSugerido?.chave, 'upa');
+      expect(rotuloDaResposta(jsonDecode(json) as Map<String, dynamic>), 'urgencia');
     });
 
     test('nível desconhecido é ignorado', () {

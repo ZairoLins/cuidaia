@@ -293,4 +293,45 @@ const artigos = <String, Artigo>{
     refs: [refRas, refLei8080],
     nivelAtivo: 2,
   ),
+  'vigilancia': Artigo(
+    topico: 'vigilancia',
+    categoria: 'Vigilância em saúde',
+    titulo: 'Vigilância em saúde: cuidar da saúde de todos',
+    tempo: 'Leitura de 4 min',
+    lead: 'Além de atender quem está doente, o SUS acompanha o que acontece com a saúde da população para prevenir doenças e agir cedo quando surge um risco.',
+    diagramaRotulo: 'Atenção Primária destacada: a vigilância em saúde faz parte das ações da UBS.',
+    secoes: [
+      SecaoArtigo('O que é', [
+        'A vigilância em saúde reúne ações que observam, previnem e controlam riscos à saúde da coletividade, e não só de uma pessoa.',
+        'A Lei Orgânica da Saúde coloca essas ações entre as atribuições do SUS.',
+      ]),
+      SecaoArtigo(
+        'Principais áreas',
+        ['A lei descreve, entre outras:'],
+        [
+          'Vigilância epidemiológica: acompanha doenças e agravos, como surtos e epidemias, para indicar medidas de prevenção e controle',
+          'Vigilância sanitária: fiscaliza produtos e serviços ligados à saúde, como alimentos, medicamentos e estabelecimentos',
+          'Saúde do trabalhador: atua sobre riscos e agravos ligados ao trabalho',
+        ],
+      ),
+      SecaoArtigo(
+        'Onde ela aparece no seu dia a dia',
+        [],
+        [
+          'Nas campanhas e no calendário de vacinação',
+          'Na notificação de doenças, que permite agir rápido diante de um surto',
+          'Nas visitas para controlar focos do mosquito da dengue',
+          'Na fiscalização de restaurantes, farmácias e outros estabelecimentos',
+        ],
+      ),
+      SecaoArtigo('E a UBS?', [
+        'A vigilância em saúde também faz parte das ações da Atenção Primária. As equipes da UBS e os agentes comunitários conhecem o território, identificam situações de risco e participam das campanhas.',
+        'Por isso, a UBS é um bom lugar para se informar sobre vacinas e sobre riscos de saúde na sua região.',
+      ]),
+    ],
+    destaqueTitulo: 'Você sabia?',
+    destaque: 'Quando você toma uma vacina, protege a si mesmo e também quem convive com você.',
+    refs: [refLei8080, refPnab],
+    nivelAtivo: 0,
+  ),
 };

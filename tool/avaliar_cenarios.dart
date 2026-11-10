@@ -51,7 +51,8 @@ Future<void> main(List<String> args) async {
     return;
   }
   for (final c in cenarios) {
-    if (NivelSugerido.daChave(c[iEsperado].trim()) == null) {
+    final e = c[iEsperado].trim();
+    if (e != rotuloEsclarecer && NivelSugerido.daChave(e) == null) {
       stderr.writeln('Cenário ${c[iId]}: nível esperado inválido "${c[iEsperado]}".');
       exitCode = 65;
       return;
@@ -128,7 +129,7 @@ Future<void> main(List<String> args) async {
           camada = 'IA';
           try {
             final json = await _perguntarComRetentativas(http, chave, modelo, texto);
-            obtido = NivelSugerido.daChave(json['nivel'])?.chave ?? 'invalido';
+            obtido = rotuloDaResposta(json);
             justificativa = '${json['justificativa'] ?? ''}';
             fonte = '${json['fonte'] ?? ''}';
             resposta = (json['paragrafos'] as List? ?? const []).join(' ');
@@ -306,7 +307,8 @@ String _resumo(List<({String esperado, String obtido})> todos) {
   final acertos = rs.where((r) => r.esperado == r.obtido).length;
   b.writeln('Acurácia: $acertos/$total (${_pct(acertos, total)})');
 
-  final niveis = NivelSugerido.values.map((n) => n.chave).toList();
+  // "esclarecer" não é nível de atenção, mas entra na matriz como resposta esperada.
+  final niveis = [...NivelSugerido.values.map((n) => n.chave), rotuloEsclarecer];
   final colunas = [...niveis, 'sem_classificacao', 'invalido'];
   b.writeln('\nMatriz de confusão (linhas = esperado, colunas = obtido):');
   b.writeln(['', ...colunas].map((c) => c.padRight(18)).join());

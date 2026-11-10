@@ -127,6 +127,10 @@ tecnologia ou com o tema. Por isso o app oferece:
     buscando o tipo de unidade (UBS, UPA ou CAPS).
   - Há também "Saber mais sobre este nível" e "Não é bem isso? Ver outras
     opções".
+- **Pergunta de esclarecimento:** se o relato for curto demais para escolher o
+  nível e não houver sinal de risco, a IA faz uma única pergunta (por exemplo,
+  há quanto tempo começou) antes de sugerir o serviço. As opções manuais de
+  "Onde devo ser atendido?" continuam à mão.
 - **Ouvir:** cada resposta pode ser lida em voz alta.
 - **Erros:** "Sem conexão" ou "O assistente não respondeu agora", com o botão
   "Tentar novamente". A pergunta fica salva.
@@ -139,6 +143,8 @@ tecnologia ou com o tema. Por isso o app oferece:
 - **"Como se conectam":** linha do tempo com encaminhamento, regulação,
   retorno (contrarreferência) e urgência.
 - **"Exemplo de percurso":** a história de um usuário passando pelos níveis.
+- **"Saúde coletiva":** link para o artigo de vigilância em saúde (vacinação,
+  controle de doenças e fiscalização).
 - **Fontes oficiais**, em chips com links.
 - **Busca nos conteúdos.**
 - **Data da última revisão** dos conteúdos.
@@ -404,13 +410,15 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `maxTokensAssistente` | 4096. O raciocínio interno do modelo conta dentro desse limite; com 1024, o JSON saía cortado. |
 | `nivelRaciocinio` | `LOW`. Raciocínio baixo deixa a resposta mais rápida e econômica. |
 | `instrucoesAssistente` | O texto de sistema (prompt) com objetivo, regras de linguagem, proibição de diagnóstico, conduta em risco e sofrimento emocional, critérios de cada nível e a lista de fontes. Inclui o resumo revisado dos níveis de atenção. |
-| `esquemaRespostaRest`, `ordemCampos`, `descricoesCampos` | Formato JSON obrigatório da resposta (usado pelo roteiro de avaliação; o app monta o mesmo com `Schema`). |
+| `esquemaRespostaRest`, `ordemCampos`, `descricoesCampos` | Formato JSON obrigatório da resposta, com seis campos (usado pelo roteiro de avaliação; o app monta o mesmo com `Schema`). |
+| `pedeEsclarecimento(json)` | Diz se a resposta é uma pergunta de esclarecimento. Uma indicação de urgência sempre prevalece, mesmo que o modelo também peça mais informações. |
+| `rotuloEsclarecer`, `rotuloDaResposta(json)` | Rótulo da resposta para a avaliação: a chave do nível, `esclarecer` ou `invalido`. App e roteiro usam a mesma regra. |
 
 #### `assistente.dart`: serviços, respostas e interface do assistente
 
 | Elemento | Função |
 |---|---|
-| `RespostaEducativa` | Resposta do assistente: parágrafos, nome e URL da fonte, nível sugerido, justificativa e se deve oferecer a orientação. `servicoSugerido` devolve o cartão de serviço do nível. |
+| `RespostaEducativa` | Resposta do assistente: parágrafos, nome e URL da fonte, nível sugerido, justificativa, se deve oferecer a orientação e se é uma pergunta de esclarecimento (`pedeEsclarecimento`). `servicoSugerido` devolve o cartão de serviço do nível. |
 | `servicoDoNivel(nivel)` | Converte o nível sugerido no cartão: primária → UBS; secundária e terciária → "comece pela UBS" (acesso por encaminhamento); urgência → UPA; psicossocial → saúde mental. |
 | `artigoDoNivel(nivel)` | Artigo da aba Aprenda ligado ao nível, para o botão "Saber mais". |
 | `AcaoLigar` | Botão de ligação de um serviço (ex.: "Ligar 192"). |
@@ -431,7 +439,7 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `responder(pergunta)` | 1) Se for pergunta frequente, usa a resposta pronta (sem gastar cota). 2) Senão, envia ao Gemini junto com as últimas 6 trocas da conversa (para entender continuações), com tempo limite de 40 s. 3) Converte a resposta e guarda no histórico. |
 | `reiniciar()` | Esquece o histórico (ao apagar a conversa ou sair). |
 | `_lembrar(...)` | Guarda a pergunta e a resposta, mantendo no máximo `limiteTurnos` (6) trocas. |
-| `converter(texto)` | Lê o JSON do modelo. Fonte desconhecida vira o portal do Ministério da Saúde. Nível desconhecido ou "não se aplica" não gera cartão. Resposta vazia vira erro (o chat oferece "Tentar novamente"). É testado diretamente. |
+| `converter(texto)` | Lê o JSON do modelo. Fonte desconhecida vira o portal do Ministério da Saúde. Nível desconhecido ou "não se aplica" não gera cartão. Pergunta de esclarecimento não gera cartão, mas oferece as opções manuais de orientação. Resposta vazia vira erro (o chat oferece "Tentar novamente"). É testado diretamente. |
 
 #### `conteudos.dart`: conteúdos educativos
 
@@ -447,7 +455,7 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `conexoesRede` | "Como se conectam": encaminhamento, regulação, contrarreferência e urgência. |
 | `percursoExemplo` | História de um usuário passando pelos níveis. |
 | `referenciasAprenda`, `assuntosExplorar` | Fontes e sugestões de busca da aba Aprenda. |
-| `artigos` | Os três artigos: "Atenção Primária: a porta de entrada do SUS", "Atenção Secundária: o cuidado especializado" e "Atenção Terciária: a alta complexidade". |
+| `artigos` | Os quatro artigos: "Atenção Primária: a porta de entrada do SUS", "Atenção Secundária: o cuidado especializado", "Atenção Terciária: a alta complexidade" e "Vigilância em saúde: cuidar da saúde de todos". O resumo da vigilância também entra na instrução da IA. |
 
 ### 6.3 `lib/services/`: integrações
 
@@ -676,7 +684,7 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
    - não pedir dados pessoais.
 3. **Saída estruturada.** O Gemini é obrigado a responder num JSON com esquema
    fixo (`paragrafos`, `fonte`, `nivel`, `justificativa`,
-   `oferecerOrientacao`).
+   `oferecerOrientacao`, `pedirEsclarecimento`).
 4. **Fontes fechadas.** A fonte é uma chave de uma lista do app, então nenhum
    link pode ser inventado.
 5. **Conversão defensiva.** Fonte ou nível desconhecidos têm um valor seguro;
@@ -685,6 +693,11 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
    que o caminho começa pela UBS, como manda o Decreto 7.508/2011.
 7. **Na dúvida, o mais rápido.** Entre dois níveis, a IA escolhe o que exige
    atendimento mais rápido. Isso reduz a subtriagem.
+8. **Perguntar antes de classificar.** Se o relato for curto demais e não houver
+   sinal de risco, a IA faz uma única pergunta curta antes de sugerir o nível,
+   e lembra de ligar 192 ou procurar uma UPA se houver piora. Ela pergunta no
+   máximo uma vez seguida e, havendo qualquer sinal de risco, nunca pergunta:
+   orienta a urgência.
 
 ### 8.2 Parâmetros
 
@@ -705,9 +718,13 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
   "fonte": "pnab",
   "nivel": "primaria",
   "justificativa": "Sintoma leve, sem sinais de alarme, que pode ser avaliado na UBS.",
-  "oferecerOrientacao": false
+  "oferecerOrientacao": false,
+  "pedirEsclarecimento": false
 }
 ```
+
+Numa pergunta de esclarecimento, `pedirEsclarecimento` vem `true`, `nivel` vem
+`nao_se_aplica` e os parágrafos trazem a pergunta.
 
 ---
 
@@ -794,7 +811,7 @@ O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. El
 
 ## 13. Testes automatizados
 
-O comando `flutter test` roda **31 testes**, sem internet e sem Firebase, com
+O comando `flutter test` roda **33 testes**, sem internet e sem Firebase, com
 as implementações de teste. Eles estão em dois arquivos.
 
 **`test/widget_test.dart`**
@@ -812,7 +829,7 @@ as implementações de teste. Eles estão em dois arquivos.
 
 | Grupo | O que é verificado |
 |---|---|
-| Classificação orientativa | Cada nível leva ao cartão certo, "não se aplica" não sugere serviço e o chat permite ver outras opções. |
+| Classificação orientativa | Cada nível leva ao cartão certo, "não se aplica" não sugere serviço e o chat permite ver outras opções; a pergunta de esclarecimento não sugere serviço e oferece as opções manuais; urgência prevalece sobre o pedido de esclarecimento. |
 
 A análise estática (`flutter analyze`) não aponta nenhum problema.
 
@@ -827,8 +844,17 @@ pelo app é coerente com a organização do SUS.
 
 - `avaliacao/cenarios.csv` traz os cenários simulados, com as colunas `id`,
   `texto` e `esperado`.
-- Os 18 cenários atuais são exemplos. O conjunto final, com 40 a 60 cenários,
-  deve ter o gabarito revisado por um profissional de saúde.
+- São 70 cenários: 10 para cada um dos seis níveis e 10 relatos incompletos
+  (I01 a I10), em que a resposta esperada é uma pergunta de esclarecimento.
+- Valores aceitos em `esperado`: `primaria`, `secundaria`, `terciaria`,
+  `urgencia`, `psicossocial`, `nao_se_aplica` e `esclarecer` (não é um nível de
+  atenção, e sim um tipo de resposta).
+- Três cenários (U04, U06 e M07) têm palavras-chave de risco e são resolvidos
+  pela triagem local, sem chamar o modelo.
+- Cada cenário é enviado como conversa nova: a avaliação mede se o assistente
+  pergunta, mas não a classificação feita depois da resposta da pessoa.
+- O gabarito deve ser revisado por um profissional de saúde (ou pelo
+  orientador) antes da rodada oficial.
 
 ### 14.2 Como rodar
 
@@ -850,6 +876,18 @@ instrução, o mesmo esquema e os mesmos parâmetros:
 1. a triagem local;
 2. o Gemini.
 
+Cota e retomada:
+- Por padrão, o roteiro espera 7 s entre as chamadas, para respeitar o limite
+  por minuto da cota gratuita (`--pausa-ms` muda esse tempo).
+- Erros temporários (HTTP 429, 500 e 503) são repetidos até 5 vezes, com a
+  espera indicada pela API.
+- Se a cota diária acabar, o roteiro para e salva o que já fez. Rodar o mesmo
+  comando depois reaproveita as execuções gravadas e só chama a API para as que
+  faltam ou falharam.
+- Falhas de API aparecem como `obtido=erro` e ficam fora das métricas.
+- Depois de revisar o gabarito, rodar de novo recalcula as métricas sem chamar
+  o modelo.
+
 ### 14.3 Métricas
 
 - acurácia;
@@ -859,7 +897,8 @@ instrução, o mesmo esquema e os mesmos parâmetros:
   mais grave;
 - sobretriagem.
 
-Cada execução gera um CSV de resultados em `avaliacao/`. Para medir a
+Os resultados ficam em `avaliacao/resultados.csv`, com uma linha por cenário e
+repetição (outro nome pode ser escolhido com `--saida`). Para medir a
 consistência, compare as repetições de um mesmo cenário.
 
 ---
@@ -924,7 +963,10 @@ O roteiro completo da loja está em [publicacao.md](publicacao.md):
 
 **Trabalhos futuros:**
 - integrar com o CNES para listar unidades públicas reais;
-- ampliar os conteúdos (urgência, saúde mental, vigilância);
+- ampliar os conteúdos (urgência e saúde mental; a vigilância em saúde já tem
+  artigo);
+- avaliar a classificação feita depois da pergunta de esclarecimento, com
+  conversas de mais de uma troca;
 - testar com usuários (usabilidade e compreensão);
 - avaliar a IA com um conjunto maior de cenários, revisado por profissionais;
 - oferecer modo offline com mais respostas prontas.
