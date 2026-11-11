@@ -95,16 +95,32 @@ validam campos e tamanhos.
 - **App Check** garante que só o app verdadeiro gasta a cota da IA: Play
   Integrity no Android publicado, token de depuração em desenvolvimento.
 - A chave de assinatura e o token de depuração ficam fora do git.
+- **Regras do Firestore** restringem o acesso ao próprio perfil, validam
+  campos e tamanhos e fixam a data de criação (a do servidor, sem alteração
+  depois). `tool/testar_regras.mjs` confere 22 casos no emulador local.
+- **Limites de entrada.** Os campos do perfil param nos mesmos tamanhos das
+  regras, e cada pergunta ao assistente tem no máximo 1.000 caracteres.
+- **Android.** Backup na nuvem e cópia entre aparelhos desligados; só HTTPS.
+- **Web.** Cabeçalhos do Hosting contra *clickjacking* e *MIME sniffing*, com
+  política de referência e de permissões, e uma *Content-Security-Policy* com
+  lista fechada de origens (`tool/testar_csp.mjs` confere no Chrome).
+- **E-mail confirmado.** Conta criada com e-mail e senha só usa o app depois
+  de abrir o link de confirmação.
+- **Release.** Sem a chave de upload, o Gradle recusa o build de release.
+- **Links.** `abrirLink` só aceita `https`, `tel` e `geo`.
+- **Log.** Na versão publicada, o app não escreve no log do aparelho.
 
 ## Testes e avaliação
 
-- `flutter test`: 31 testes cobrindo:
-  - login (e-mail e Google), validação, recuperação de senha e exclusão de conta;
+- `flutter test`: 44 testes cobrindo:
+  - login (e-mail e Google), validação, confirmação de e-mail, recuperação de senha e exclusão de conta;
   - notificações;
   - progresso de leitura;
   - triagem;
   - conversão do JSON do Gemini;
-  - estados do chat e o botão do mapa.
+  - estados do chat e o botão do mapa;
+  - segurança: endereços permitidos, limites de entrada e corte da resposta
+    da IA.
 - `tool/avaliar_cenarios.dart` com `avaliacao/cenarios.csv` mede se o nível
   sugerido bate com o gabarito. Ele roda a mesma triagem e a mesma
   configuração do modelo e mede acurácia, matriz de confusão e **subtriagem**
@@ -138,3 +154,8 @@ validam campos e tamanhos.
    perde o histórico ao sair da conta.
 8. **Web e iOS.** A versão web está publicada (Firebase Hosting), mas sem
    notificações, que dependem do Android. O iOS compila, mas não foi testado.
+9. **Pontos de segurança em aberto.** O App Check ainda não está aplicado ao
+   Authentication e ao Firestore (é uma configuração do console); a
+   *Content-Security-Policy* permite scripts embutidos, exigidos pelos plugins
+   do Firebase; e cinco plugins ainda dependem do Kotlin Gradle Plugin. Os
+   detalhes estão na seção 16 de `docs/DOCUMENTACAO.md`.

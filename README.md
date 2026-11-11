@@ -53,7 +53,7 @@ triagem local de risco.
 - **Notificações** (Android). Dica da semana e lembrete de leitura, ambas
   locais e opcionais.
 - **Conta.**
-  - E-mail e senha ou Google;
+  - E-mail e senha (com confirmação do e-mail) ou Google;
   - recuperação de senha e edição do perfil com foto;
   - exclusão da conta.
 - **LGPD.** O app permite consultar, baixar (JSON) e excluir os dados, e
@@ -106,8 +106,8 @@ lib/
   screens/                     Login, cadastro, Início, Assistente, Aprenda, Artigo, Perfil
   theme/                       Identidade visual 2.0 (Manrope, verde #137567, petróleo)
   widgets/                     Botões, campos, cartões, avisos, logo
-test/                          31 testes automatizados
-tool/                          Avaliação da IA por cenários e gerador do ícone
+test/                          44 testes automatizados
+tool/                          Avaliação da IA por cenários, testes das regras do banco e da CSP, gerador do ícone
 avaliacao/                     Cenários de avaliação
 docs/                          Documentação completa, arquitetura e publicação
 web/                           Página web e política de privacidade pública
@@ -166,11 +166,15 @@ do Firebase, abaixo. O botão **Executar** do VS Code já passa esse arquivo
    keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android
    ```
 
-3. Publique as regras do banco:
+3. Teste as regras do banco no emulador local e publique:
 
    ```bash
+   firebase emulators:exec --only firestore --project demo-cuidaia "node tool/testar_regras.mjs"
    firebase deploy --only firestore:rules
    ```
+
+   O teste precisa de Node 18+ e Java, roda só no emulador e não toca no
+   projeto real.
 
 4. Configure o **App Check**:
    - **Desenvolvimento:**
@@ -193,7 +197,7 @@ Para trocar o modelo da IA sem mexer no código, use
 | Android para a loja (.aab) | `flutter build appbundle --release` |
 | APK para instalar direto | `flutter build apk --release --split-per-abi` |
 | APK de avaliação (banca) | `flutter build apk --release --split-per-abi --dart-define-from-file=app_check.avaliacao.local.json` |
-| Web | `flutter build web --release` e depois `firebase deploy --only hosting` |
+| Web | `flutter build web --release`, `node tool/testar_csp.mjs .` e depois `firebase deploy --only hosting` |
 
 **Arquivos que ficam fora do git:**
 - `android/key.properties` e `android/app/upload-keystore.jks`, a chave de
@@ -227,10 +231,30 @@ mesma triagem e pela mesma configuração do Gemini que o app usa, e calcula:
 
 Os detalhes estão em [avaliacao/README.md](avaliacao/README.md).
 
+## Segurança
+
+- **Banco.** As regras do Firestore só deixam cada pessoa acessar o próprio
+  perfil, validam campos e tamanhos e impedem alterar a data de criação.
+- **IA.** Nenhuma chave no app; o App Check protege a cota. Cada pergunta tem
+  no máximo 1.000 caracteres.
+- **Android.** Sem backup na nuvem nem cópia entre aparelhos, e só conexões
+  HTTPS.
+- **Web.** O Hosting envia cabeçalhos que impedem a página de ser embutida em
+  outro site, bloqueiam recursos que o app não usa (câmera, microfone,
+  localização) e limitam de onde a página pode carregar scripts e dados
+  (*Content-Security-Policy*).
+- **Conta.** Quem cria a conta com e-mail e senha só usa o app depois de
+  confirmar o e-mail.
+- **Release.** Sem a chave de upload, o build de release é recusado.
+- **Links.** O app só abre endereços `https`, `tel` e `geo`.
+- **Log.** A versão publicada não escreve nada no log do aparelho.
+
+Os detalhes estão em [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md#10-segurança).
+
 ## Privacidade
 
 - O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. Ele não pede dados de saúde.
-- As preferências e as conversas ficam só no aparelho.
+- As preferências e as conversas ficam só no aparelho; no Android, elas não entram no backup do Google.
 - O texto das perguntas livres vai ao Gemini sem nome e sem e-mail.
 - A localização não é coletada.
 

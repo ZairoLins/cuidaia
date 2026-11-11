@@ -12,6 +12,11 @@ O app **não foi publicado**. Este roteiro deixa tudo pronto para quando (e se) 
 | Pacote para a loja | `flutter build appbundle --release` → `build/app/outputs/bundle/release/app-release.aab` |
 | APK para avaliadores | `flutter build apk --release --split-per-abi` → use o `app-arm64-v8a-release.apk` |
 | Política de privacidade e exclusão de conta (páginas públicas) | `web/privacidade.html` (seção `#excluir-conta`), publicada junto do app web |
+| Backup desligado e só HTTPS no Android | `AndroidManifest.xml` e `res/xml/data_extraction_rules.xml` |
+| Cabeçalhos de segurança da web, com *Content-Security-Policy* | `firebase.json` + `tool/testar_csp.mjs` (valem a partir do próximo `firebase deploy --only hosting`; antes, teste o login com o Google na web) |
+| Release só com a chave de upload | `android/app/build.gradle.kts` recusa o build de release sem `android/key.properties` |
+| Confirmação de e-mail obrigatória | `lib/screens/confirmar_email_screen.dart` |
+| Regras do banco testadas | `firestore.rules` + `tool/testar_regras.mjs` (valem a partir do próximo `firebase deploy --only firestore:rules`) |
 
 > **Faça backup da chave agora.** Copie `android/app/upload-keystore.jks` e
 > `android/key.properties` para um lugar seguro fora do computador (pendrive,

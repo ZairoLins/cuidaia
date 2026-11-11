@@ -87,10 +87,11 @@ tecnologia ou com o tema. Por isso o app oferece:
 | Função | Descrição |
 |---|---|
 | Criar conta | Nome completo, e-mail e senha (mínimo de 8 caracteres, com letra e número). Envia um e-mail de confirmação. |
+| Confirmar o e-mail | Quem cria a conta com e-mail e senha só entra no app depois de abrir o link de confirmação. Até lá, vê a tela "Confirme seu e-mail", com "Já confirmei", "Reenviar o link" (um envio por minuto) e "Sair e usar outra conta". Contas Google já vêm confirmadas. |
 | Entrar com e-mail e senha | Login tradicional, com mensagens de erro em linguagem simples. |
 | Continuar com o Google | Login com a conta Google. Na primeira vez, o perfil é criado com o nome e o e-mail do Google. |
 | Esqueci minha senha | Envia um link de redefinição para o e-mail digitado. O app não informa se o e-mail tem conta, para não expor quem usa o app. |
-| Sessão salva | Quem já entrou abre o app direto na tela inicial. |
+| Sessão salva | Quem já entrou abre o app direto na tela inicial (ou na confirmação do e-mail, se ela ainda falta). |
 | Editar perfil | Nome, apelido, e-mail e foto. A troca de e-mail só vale depois que a pessoa confirma o link enviado ao novo endereço. |
 | Alterar senha | Exige a senha atual. Não aparece para quem entrou pelo Google. |
 | Sair | Encerra a sessão, apaga a conversa e cancela as notificações. |
@@ -344,7 +345,7 @@ cuidaia/
 │   ├── theme/                   Identidade visual
 │   └── widgets/                 Componentes reutilizáveis
 ├── test/                        Testes automatizados
-├── tool/                        Avaliação por cenários e gerador de ícones
+├── tool/                        Avaliação por cenários, teste das regras do banco e gerador de ícones
 ├── avaliacao/                   Cenários e resultados da avaliação da IA
 ├── docs/                        Documentação
 ├── assets/icone/                Imagens-base do ícone do app
@@ -365,7 +366,7 @@ cuidaia/
 
 | Elemento | Função |
 |---|---|
-| `main()` | Inicializa o Flutter e o Firebase, ativa o App Check, prepara as notificações, carrega o `AppState` com as implementações reais (`ContaFirebase`, `AssistenteGemini`, `LembretesLocais`) e inicia o app. Se o app foi aberto por uma notificação, trata o toque depois do primeiro quadro. |
+| `main()` | Inicializa o Flutter e o Firebase, desliga o `debugPrint` na versão publicada (nada do app vai para o log do aparelho), ativa o App Check, prepara as notificações, carrega o `AppState` com as implementações reais (`ContaFirebase`, `AssistenteGemini`, `LembretesLocais`) e inicia o app. Se o app foi aberto por uma notificação, trata o toque depois do primeiro quadro. |
 | `_ativarAppCheck()` | Escolhe o provedor do App Check. Em modo debug ou com token de avaliação: provedor de depuração. Em produção: reCAPTCHA Enterprise (web), Play Integrity (Android), App Attest (iOS). Falhas não derrubam o app. |
 | `_abrirLembrete(estado, payload)` | Ao tocar no lembrete "Continue sua leitura" (`leitura:<topico>`), abre o artigo. A dica semanal só abre o app. |
 | `_recaptchaWeb` | Chave pública do site no reCAPTCHA Enterprise. Pode ser trocada por `--dart-define=RECAPTCHA_SITE_KEY`. |
@@ -375,7 +376,7 @@ cuidaia/
 
 | Elemento | Função |
 |---|---|
-| `CuidaApp` | Monta o `MaterialApp`. Decide a tela inicial (Login ou Início, conforme a sessão). Reconstrói o tema quando as preferências de acessibilidade mudam. Aplica a escala do texto (somada ao ajuste do sistema, limitada a 200%) e o "reduzir movimento". |
+| `CuidaApp` | Monta o `MaterialApp`. Decide a tela inicial com `telaDaSessao` (Login, "Confirme seu e-mail" ou Início, conforme a sessão). Reconstrói o tema quando as preferências de acessibilidade mudam. Aplica a escala do texto (somada ao ajuste do sistema, limitada a 200%) e o "reduzir movimento". |
 | `CuidaApp.navegador` | Chave global do navegador, para abrir telas a partir de uma notificação. |
 
 #### `firebase_options.dart`
@@ -463,10 +464,10 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 
 | Elemento | Função |
 |---|---|
-| `Usuario` | Perfil: nome, apelido, e-mail, foto, se tem senha. `iniciais` (para o avatar), `primeiroNome` (saudação; usa o apelido se houver) e `copyWith`. **Nenhum dado de saúde.** |
-| `ErroConta` | Erro com mensagem pronta para a tela. `cancelado` indica que a pessoa fechou a janela do Google (nada é mostrado). `precisaSenha` pede nova confirmação. |
-| `Conta` | Interface: `sessaoAtual`, `entrar`, `entrarComGoogle`, `criar`, `recuperarSenha`, `alterarSenha`, `salvarPerfil`, `sair`, `excluir`. |
-| `ContaMemoria` | Implementação em memória para os testes (sem rede). |
+| `Usuario` | Perfil: nome, apelido, e-mail, foto, se tem senha e se o e-mail foi confirmado (`emailConfirmado`). `iniciais` (para o avatar), `primeiroNome` (saudação; usa o apelido se houver) e `copyWith`. **Nenhum dado de saúde.** |
+| `ErroConta` | Erro com mensagem pronta para a tela. `cancelado` indica que a pessoa fechou a janela do Google (nada é mostrado). `precisaSenha` pede nova confirmação. `senhaAtualIncorreta` marca o erro da troca de senha que aparece no campo "Senha atual". |
+| `Conta` | Interface: `sessaoAtual`, `entrar`, `entrarComGoogle`, `criar`, `reenviarConfirmacao`, `emailFoiConfirmado`, `recuperarSenha`, `alterarSenha`, `salvarPerfil`, `sair`, `excluir`. |
+| `ContaMemoria` | Implementação em memória para os testes (sem rede). `confirmarEmail` simula a pessoa abrir o link de confirmação. |
 
 #### `conta_firebase.dart`: conta com Firebase
 
@@ -477,13 +478,15 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `entrar()` | Login com e-mail e senha. |
 | `entrarComGoogle()` | Popup na web, aba do navegador no Android, sempre pedindo para escolher a conta. |
 | `criar()` | Cria a conta, salva o nome, cria o perfil no Firestore e envia o e-mail de confirmação. |
+| `reenviarConfirmacao()` | Envia de novo o link de confirmação do e-mail. |
+| `emailFoiConfirmado()` | Recarrega o usuário no Firebase e informa se o e-mail já foi confirmado. |
 | `recuperarSenha()` | Envia o link; não revela se o e-mail existe. |
 | `alterarSenha()` | Confirma a senha atual (reautenticação) e troca. |
 | `salvarPerfil()` | Salva nome, apelido e foto. Se o e-mail mudou, envia o link de confirmação; o e-mail só muda depois de confirmado. |
 | `sair()` | Encerra a sessão. |
 | `excluir()` | Reautentica (senha ou Google), apaga o documento do perfil e a conta. |
 | `_carregarPerfil()` | Lê o perfil; no primeiro login com Google, cria. Mantém o e-mail do perfil igual ao do Auth. |
-| `_tratar()` / `_mensagemAuth()` | Convertem os códigos de erro do Firebase em mensagens simples (ex.: "E-mail ou senha incorretos."). Códigos não previstos aparecem como "(código: …)" para facilitar o suporte, e são registrados no console. |
+| `_tratar()` / `_mensagemAuth()` | Convertem os códigos de erro do Firebase em mensagens simples (ex.: "E-mail ou senha incorretos."). Códigos não previstos aparecem como "(código: …)" para facilitar o suporte, e são registrados no console (só em desenvolvimento). |
 
 #### `lembretes.dart`: notificações locais
 
@@ -507,7 +510,8 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 
 | Função | Uso |
 |---|---|
-| `abrirLink(context, url)` | Abre um link no app externo; mostra um aviso se falhar. |
+| `esquemasPermitidos`, `linkPermitido(url)` | Lista fechada dos tipos de endereço que o app abre (`https`, `tel`, `geo`) e a verificação usada antes de abrir. |
+| `abrirLink(context, url)` | Abre um link no app externo, se o endereço for permitido; mostra um aviso se falhar ou se for recusado. |
 | `ligar(context, numero)` | Abre o discador (192, 188). |
 | `abrirMapa(context, termo)` | No Android, usa `geo:` (a pessoa escolhe o app de mapas); senão, ou se falhar, abre a busca do Google Maps. **O CuidaIA não pede nem recebe a localização**: quem usa o GPS é o app de mapas. |
 
@@ -521,6 +525,8 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `PreferenciasA11y` | Preferências de acessibilidade; `resumo` (texto do Perfil); `toJson`/`fromJson` para salvar no aparelho. |
 | `AppState.carregar(...)` | Lê as preferências do aparelho, a sessão salva, os artigos salvos e o progresso; reagenda a dica semanal se a pessoa estiver logada. |
 | `entrar`, `entrarComGoogle`, `criarConta` | Chamam a conta e iniciam a sessão. |
+| `liberado` | Sessão ativa **e** e-mail confirmado: só assim o app abre além da tela "Confirme seu e-mail". |
+| `reenviarConfirmacao()`, `verificarConfirmacao()` | Reenvia o link e confere no servidor se ele já foi aberto; quando foi, libera o app. |
 | `recuperarSenha`, `alterarSenha`, `salvarUsuario` | Repassam à conta e atualizam o perfil na tela. |
 | `excluirConta(senha)` | Exclui a conta e apaga os dados locais (salvos, notificações, progresso). |
 | `sair()` | Cancela notificações e voz, encerra a conversa e a sessão. |
@@ -541,7 +547,8 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | `FaseChat` | `livre`, `enviada`, `pensando`, `erro`. |
 | `MensagemChat` (*sealed*) | Tipos de mensagem: `MsgUsuario` (texto; `falhou`), `MsgResposta` (resposta da IA), `MsgOpcoes` (as quatro situações; `escolha`), `MsgServico` (cartão; `intro`, `nivel`, `justificativa`; `sugeridoPelaIA`). Por ser *sealed*, o compilador obriga a tela a tratar todos os tipos. |
 | `textoParaFala(m)` | Texto lido em voz alta para cada tipo de mensagem. |
-| `perguntar(texto)` | Adiciona a pergunta, roda a triagem e decide: cartão do SAMU, cartão de saúde mental, opções de orientação ou IA. |
+| `limiteCaracteresPergunta` | Tamanho máximo de uma pergunta (1.000 caracteres). O campo do chat para nesse limite, e `perguntar` corta o que passar. |
+| `perguntar(texto)` | Adiciona a pergunta (cortada no limite), roda a triagem e decide: cartão do SAMU, cartão de saúde mental, opções de orientação ou IA. |
 | `iniciarOrientacao()` | Fluxo "Onde devo ser atendido?". |
 | `escolher(opcoes, opcao)` | Registra a escolha e mostra o cartão do serviço. |
 | `verOutrasOpcoes(sugestao)` | Quando a sugestão da IA não combina, reabre as opções. |
@@ -558,6 +565,7 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 |---|---|
 | `login_screen.dart` | `LoginScreen`: logo, "Continuar com o Google" primeiro, depois e-mail e senha com validação, "Esqueci minha senha", "Criar conta" e o aviso de aceite dos Termos e da Privacidade. Erros de conta aparecem num aviso no topo. |
 | `cadastro_screen.dart` | `CadastroScreen`: nome completo (ao menos duas palavras), e-mail válido, senha com requisitos visíveis em tempo real e aceite dos termos. Mostra um resumo dos erros. |
+| `confirmar_email_screen.dart` | `ConfirmarEmailScreen`: tela mostrada a quem criou a conta e ainda não abriu o link de confirmação ("Já confirmei", "Reenviar o link", "Sair e usar outra conta"). `telaDaSessao(estado)` escolhe entre Login, confirmação e Início; `abrirTelaDaSessao(context)` navega para ela depois do login e do cadastro. |
 | `recuperar_senha.dart` | `mostrarRecuperarSenha`: folha inferior que envia o link de nova senha. |
 | `home_shell.dart` | `HomeShell`: estrutura com as quatro abas (Início, Assistente, Aprenda, Perfil) e a barra de navegação inferior (`NavInferior`). `HomeShell.of(context)` permite trocar de aba (`irPara`) e abrir o chat (`abrirChat`, com a orientação se pedido). As abas são mantidas vivas para não perder a conversa. |
 | `inicio_screen.dart` | `InicioScreen`: saudação, `_Perguntar` (campo que abre o chat), `_Atalho` (Onde ser atendido / Emergência 192), Continue lendo, níveis de atenção. |
@@ -594,24 +602,27 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 | Arquivo | Componentes |
 |---|---|
 | `logo.dart` | `CuidaSimbolo` (balão petróleo, rede branca, cruz menta, em SVG), `CuidaMarca` ("Cuida" + "IA"), `CuidaLogo` (os dois juntos). |
-| `botoes.dart` | `BotaoPrimario` (verde, 48 px, com estado de carregamento), `BotaoSecundario` (branco com borda, ícone opcional), `BotaoGoogle` (segue as diretrizes da marca Google), `BotaoCompacto` (40 px), `BotaoLink`, `BotaoDestaque` (menta sobre petróleo), `BotaoVoltar`. |
-| `campos.dart` | `CuidaCampo` (campo com rótulo, dica, erro, autopreenchimento e ação ao lado do rótulo), `BotaoVerSenha`, `RequisitosSenha` (lista que marca cada requisito em tempo real), `emailValido`. |
-| `blocos.dart` | `Cartao`, `Aviso` (sucesso/alerta/erro/informação/destaque), `CartaoTint`, `Selo`, `NumeroNivel`, `ChipCuida`, `ListaSeparada`, `ListaMarcadores`, `LinkReferencia`, `LinhaNavegacao`, `LinhaInterruptor`, `TextoComLinks` (texto com trechos clicáveis), `AvatarIniciais`, `NotaApoio`, `CabecalhoVoltar`, `TelaInterna` (estrutura das telas internas), `RotuloSecao`. |
+| `botoes.dart` | `BotaoPrimario` (verde, 48 px, com estado de carregamento), `BotaoSecundario` (branco com borda, ícone opcional), `BotaoGoogle` (segue as diretrizes da marca Google), `BotaoCompacto` (40 px), `BotaoLink`, `BotaoDestaque` (menta sobre petróleo), `BotaoCancelar` ("Cancelar" discreto dos formulários), `BotaoVoltar`. |
+| `campos.dart` | `CuidaCampo` (campo com rótulo, dica, erro, autopreenchimento, ação ao lado do rótulo e `limite` de caracteres), `BotaoVerSenha`, `RequisitosSenha` (lista que marca cada requisito em tempo real), `emailValido`, `LimiteCampo` (tamanhos máximos de nome, apelido e e-mail, iguais aos de `firestore.rules`), `normalizarNome` e `nomeCompletoValido` (usados no cadastro e na edição do perfil). |
+| `blocos.dart` | `Cartao`, `Aviso` (sucesso/alerta/erro/informação/destaque), `CartaoTint`, `Selo`, `NumeroNivel`, `ChipCuida`, `ListaSeparada`, `ListaMarcadores`, `LinkReferencia`, `LinhaNavegacao`, `LinhaInterruptor`, `TextoComLinks` (texto com trechos clicáveis), `AvatarIniciais`, `NotaApoio`, `CabecalhoVoltar`, `TelaInterna` (estrutura das telas internas), `RotuloSecao`, `MensagemErro` (erro de formulário anunciado pelo leitor de tela), `AlcaFolha` (alça das folhas inferiores). |
 | `widgets.dart` | Exporta todos os componentes num único `import`. |
 
 ### 6.8 Outros arquivos do projeto
 
 | Arquivo | Função |
 |---|---|
-| `firestore.rules` | Cada pessoa só lê, cria, altera e apaga o próprio documento `usuarios/{uid}`. Valida os campos permitidos e os tamanhos (nome ≤ 120, apelido ≤ 60, e-mail ≤ 254, foto ≤ 300 KB). Todo o resto do banco é negado. |
-| `firebase.json` | Regras do Firestore e configuração do Hosting (pasta `build/web` e cabeçalhos de cache: o código sempre é revalidado; imagens e fontes ficam em cache por 1 dia). |
+| `firestore.rules` | Cada pessoa só lê, cria, altera e apaga o próprio documento `usuarios/{uid}`. Valida os campos permitidos e os tamanhos (nome ≤ 120, apelido ≤ 60, e-mail ≤ 254, foto ≤ 300 KB). A data de criação tem de ser a do servidor e não pode ser alterada depois. Todo o resto do banco é negado. |
+| `firebase.json` | Regras do Firestore e configuração do Hosting: pasta `build/web`, cabeçalhos de segurança em todas as páginas (`X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy` completa, `Referrer-Policy`, `Permissions-Policy`) e cabeçalhos de cache (o código sempre é revalidado; imagens e fontes ficam em cache por 1 dia). |
 | `web/index.html` | Página que carrega o app web: título, descrição, tela "Carregando o CuidaIA…" e correção automática de endereço com ponto final. |
 | `web/privacidade.html` | Política de privacidade pública, com a seção `#excluir-conta`. |
-| `android/app/build.gradle.kts` | Configuração Android: pacote `br.com.cuidaia.app`, SDK 37, *desugaring* (exigido pelas notificações) e assinatura de release lida de `key.properties`. |
-| `android/app/src/main/AndroidManifest.xml` | Permissões e receptores das notificações agendadas. |
+| `android/app/build.gradle.kts` | Configuração Android: pacote `br.com.cuidaia.app`, SDK 37, *desugaring* (exigido pelas notificações) e assinatura de release lida de `key.properties`. Sem a chave, o build de release é recusado com uma mensagem clara (nunca é assinado com a chave de debug). |
+| `android/app/src/main/AndroidManifest.xml` | Permissões e receptores das notificações agendadas. Desliga o backup (`allowBackup`, `fullBackupContent`, `dataExtractionRules`) e as conexões sem HTTPS (`usesCleartextTraffic`). |
+| `android/app/src/main/res/xml/data_extraction_rules.xml` | Android 12+: exclui todos os dados do app do backup na nuvem e da cópia entre aparelhos. |
 | `pubspec.yaml` | Dependências, versão e configuração dos ícones. |
 | `.vscode/launch.json` | Botões "Executar" do VS Code já passando o token do App Check. |
 | `tool/avaliar_cenarios.dart` | Roteiro de avaliação da IA (seção 14). |
+| `tool/testar_regras.mjs` | Testa `firestore.rules` no emulador local (22 casos: dono, outra pessoa, sem login, tamanhos, campos extras, data de criação). Rodar antes de publicar as regras. |
+| `tool/testar_csp.mjs` | Serve `build/web` com os cabeçalhos de `firebase.json`, abre a página num Chrome sem janela e lista as violações da *Content-Security-Policy*. Rodar depois de `flutter build web --release` e antes de publicar o Hosting. |
 | `tool/gerar_icones_test.dart` | Gera as imagens do ícone a partir do símbolo SVG. |
 
 ---
@@ -623,7 +634,9 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 1. `main()` inicializa o Firebase e o App Check.
 2. As notificações são preparadas (no Android).
 3. `AppState.carregar` lê as preferências e a sessão salva.
-4. Com sessão, o app abre no Início; sem sessão, no Login.
+4. Com sessão e e-mail confirmado, o app abre no Início; com sessão e
+   e-mail ainda não confirmado, na tela "Confirme seu e-mail"; sem sessão, no
+   Login.
 
 ### 7.2 Uma pergunta ao assistente
 
@@ -688,7 +701,9 @@ confiável, mesmo sem internet. Nenhuma frase de risco depende do modelo.
 4. **Fontes fechadas.** A fonte é uma chave de uma lista do app, então nenhum
    link pode ser inventado.
 5. **Conversão defensiva.** Fonte ou nível desconhecidos têm um valor seguro;
-   resposta vazia vira erro com "Tentar novamente".
+   resposta vazia vira erro com "Tentar novamente"; parágrafos além do máximo
+   do esquema (4) são descartados. A pergunta também tem limite: 1.000
+   caracteres, no campo e no `ChatController`.
 6. **Regra do encaminhamento.** Nos níveis secundário e terciário, a IA explica
    que o caminho começa pela UBS, como manda o Decreto 7.508/2011.
 7. **Na dúvida, o mais rápido.** Entre dois níveis, a IA escolhe o que exige
@@ -768,7 +783,16 @@ O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. El
 |---|---|
 | Nenhuma chave de IA no app | O AI Logic faz a ponte com o Gemini. |
 | App Check | Só o app verdadeiro gasta a cota da IA. |
-| Regras do Firestore | Acesso restrito ao próprio perfil; campos e tamanhos validados. |
+| Regras do Firestore | Acesso restrito ao próprio perfil; campos e tamanhos validados; data de criação definida pelo servidor e imutável. Conferidas no emulador por `tool/testar_regras.mjs`. |
+| Limites de entrada | Nome, apelido e e-mail param nos mesmos tamanhos das regras (`LimiteCampo`); cada pergunta ao assistente tem no máximo 1.000 caracteres (`limiteCaracteresPergunta`), o que protege a cota da IA. |
+| Endereços permitidos | `abrirLink` só abre `https`, `tel` e `geo` (`linkPermitido`). Um teste confere todas as fontes e referências do app. |
+| Android sem backup | `allowBackup="false"` e `data_extraction_rules.xml`: a sessão e as preferências não vão para o backup do Google nem para outro aparelho. |
+| Só HTTPS | `usesCleartextTraffic="false"` no Android; o Hosting só atende por HTTPS. |
+| Cabeçalhos da web | `X-Frame-Options: DENY` (contra *clickjacking*), `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Permissions-Policy` (câmera, microfone, localização, pagamento e USB desligados). |
+| *Content-Security-Policy* | Lista fechada de origens: scripts só do próprio site, do Google (`gstatic.com`, `google.com` para o reCAPTCHA, `apis.google.com` para o login); conexões só com o próprio site e `*.googleapis.com`; molduras só do reCAPTCHA e do domínio de login do projeto; nenhuma página pode embutir o app. `'unsafe-inline'` continua permitido em `script-src` porque os plugins do Firebase injetam scripts na página. Conferida por `tool/testar_csp.mjs`. |
+| E-mail confirmado | Conta criada com e-mail e senha só usa o app depois de abrir o link de confirmação (`AppState.liberado`). Ninguém usa uma conta com o e-mail de outra pessoa. |
+| Release só com a chave certa | Sem `android/key.properties`, o Gradle recusa o build de release em vez de assinar com a chave de debug. |
+| Log em produção | `debugPrint` é desligado na versão publicada: códigos de erro não vão para o log do aparelho nem para o console do navegador. |
 | Senhas | Guardadas pelo Firebase, nunca pelo app; requisitos mínimos. |
 | Reautenticação | Exigida para trocar a senha e excluir a conta. |
 | Recuperação de senha | Não revela se o e-mail tem conta. |
@@ -811,8 +835,8 @@ O app pede só nome, e-mail e senha; apelido e foto de perfil são opcionais. El
 
 ## 13. Testes automatizados
 
-O comando `flutter test` roda **33 testes**, sem internet e sem Firebase, com
-as implementações de teste. Eles estão em dois arquivos.
+O comando `flutter test` roda **44 testes**, sem internet e sem Firebase, com
+as implementações de teste. Eles estão em quatro arquivos.
 
 **`test/widget_test.dart`**
 
@@ -830,6 +854,30 @@ as implementações de teste. Eles estão em dois arquivos.
 | Grupo | O que é verificado |
 |---|---|
 | Classificação orientativa | Cada nível leva ao cartão certo, "não se aplica" não sugere serviço e o chat permite ver outras opções; a pergunta de esclarecimento não sugere serviço e oferece as opções manuais; urgência prevalece sobre o pedido de esclarecimento. |
+
+**`test/seguranca_test.dart`**
+
+| Grupo | O que é verificado |
+|---|---|
+| Links | Só `https`, `tel` e `geo` são aceitos; todas as fontes oficiais e referências dos artigos usam endereço permitido. |
+| Limites de entrada | Pergunta acima de 1.000 caracteres é cortada; o campo com limite para de aceitar texto; o nome é normalizado e exige sobrenome; resposta da IA com parágrafos demais é cortada. |
+| Conta | A senha atual errada vem marcada no erro, sem depender do texto da mensagem. |
+
+**`test/confirmar_email_test.dart`**
+
+| Grupo | O que é verificado |
+|---|---|
+| Confirmação de e-mail | Conta nova só entra no app depois de confirmar; "Já confirmei" sem abrir o link mostra o aviso; reenviar envia uma vez e espera um minuto; quem não confirmou pode sair; conta Google já vem confirmada. |
+
+As regras do banco e a *Content-Security-Policy* têm testes próprios, fora do
+`flutter test`, porque precisam do emulador do Firestore e de um navegador:
+
+```bash
+firebase emulators:exec --only firestore --project demo-cuidaia "node tool/testar_regras.mjs"
+
+flutter build web --release
+node tool/testar_csp.mjs .
+```
 
 A análise estática (`flutter analyze`) não aponta nenhum problema.
 
@@ -960,6 +1008,20 @@ O roteiro completo da loja está em [publicacao.md](publicacao.md):
 7. **Conversas não ficam salvas.** É uma escolha de privacidade.
 8. **Plataformas.** A web não tem notificações. O iOS compila, mas não foi
    testado.
+9. **Pontos de segurança em aberto.**
+   - O App Check protege a IA, mas ainda não está aplicado ao Authentication
+     e ao Firestore. Essa aplicação é feita no console do Firebase, não no
+     código, e só deve ser ligada quando quase todo o tráfego aparecer como
+     verificado (veja `docs/publicacao.md`, seção 2).
+   - A *Content-Security-Policy* permite `'unsafe-inline'` em scripts, porque
+     os plugins do Firebase injetam scripts na página. O teste automático
+     cobre o carregamento do app, o reCAPTCHA e a página de privacidade; o
+     login com o Google (popup) e o uso depois do login precisam de um teste
+     manual antes de cada publicação.
+   - `firebase_ai`, `firebase_app_check`, `firebase_auth`, `firebase_core` e
+     `flutter_tts` ainda aplicam o Kotlin Gradle Plugin. Já estão na versão
+     mais recente; quando os autores migrarem, basta atualizar. Versões
+     futuras do Flutter vão recusar o build enquanto isso não acontecer.
 
 **Trabalhos futuros:**
 - integrar com o CNES para listar unidades públicas reais;
