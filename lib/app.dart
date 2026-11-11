@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_shell.dart';
-import 'screens/login_screen.dart';
+import 'screens/confirmar_email_screen.dart';
 import 'state/app_state.dart';
 import 'theme/cuida_tema.dart';
 
@@ -15,9 +14,10 @@ class CuidaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sessão salva pelo Firebase: abre direto no app. Decidido uma vez só;
-    // depois, login e logout navegam explicitamente.
-    final Widget inicial = estado.logado ? const HomeShell() : const LoginScreen();
+    // Sessão salva pelo Firebase: abre direto no app (ou na confirmação do
+    // e-mail, se ela ainda falta). Decidido uma vez só; depois, login e logout
+    // navegam explicitamente.
+    final Widget inicial = telaDaSessao(estado);
     return AppScope(
       estado: estado,
       child: ListenableBuilder(

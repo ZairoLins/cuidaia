@@ -31,13 +31,7 @@ Future<void> mostrarSairConta(BuildContext context) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: CuidaCores.bordaCampo, borderRadius: BorderRadius.circular(999)),
-                ),
-              ),
+              const AlcaFolha(),
               const SizedBox(height: 14),
               Semantics(header: true, child: Text('Sair da conta?', style: t.titulo(26))),
               const SizedBox(height: 14),

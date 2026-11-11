@@ -1,1 +1,52 @@
-{"firestore":{"rules":"firestore.rules"},"hosting":{"public":"build/web","ignore":["firebase.json","**/.*"],"headers":[{"source":"**/*.@(js|mjs|wasm|json|html)","headers":[{"key":"Cache-Control","value":"no-cache"}]},{"source":"**/*.@(png|otf|ttf|woff2)","headers":[{"key":"Cache-Control","value":"public, max-age=86400"}]}]},"flutter":{"platforms":{"android":{"default":{"projectId":"cuidaia-41f74","appId":"1:687788866642:android:60e6ac24e9fe42d88e338b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"cuidaia-41f74","configurations":{"android":"1:687788866642:android:60e6ac24e9fe42d88e338b","web":"1:687788866642:web:48a246e2b721aa998e338b"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "DENY" },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com https://www.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: data: https://*.googleapis.com https://www.gstatic.com https://fonts.gstatic.com https://www.google.com; frame-src https://cuidaia-41f74.firebaseapp.com https://www.google.com https://recaptcha.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=(), payment=(), usb=()" }
+        ]
+      },
+      {
+        "source": "**/*.@(js|mjs|wasm|json|html)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "**/*.@(png|otf|ttf|woff2)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cuidaia-41f74",
+          "appId": "1:687788866642:android:60e6ac24e9fe42d88e338b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cuidaia-41f74",
+          "configurations": {
+            "android": "1:687788866642:android:60e6ac24e9fe42d88e338b",
+            "web": "1:687788866642:web:48a246e2b721aa998e338b"
+          }
+        }
+      }
+    }
+  }
+}

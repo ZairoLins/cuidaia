@@ -770,3 +770,38 @@ class RotuloSecao extends StatelessWidget {
     );
   }
 }
+
+/// Mensagem de erro de um formulário (resposta do servidor ou validação),
+/// anunciada pelo leitor de tela assim que aparece.
+class MensagemErro extends StatelessWidget {
+  const MensagemErro(this.texto, {super.key});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Text(
+        texto,
+        style: context.tema.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
+      ),
+    );
+  }
+}
+
+/// Alça no topo das folhas inferiores ("Sair da conta?", "Recuperar senha").
+class AlcaFolha extends StatelessWidget {
+  const AlcaFolha({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(color: CuidaCores.bordaCampo, borderRadius: BorderRadius.circular(999)),
+      ),
+    );
+  }
+}

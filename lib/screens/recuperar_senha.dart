@@ -68,13 +68,7 @@ class _RecuperarSenhaState extends State<_RecuperarSenha> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: CuidaCores.bordaCampo, borderRadius: BorderRadius.circular(999)),
-                ),
-              ),
+              const AlcaFolha(),
               const SizedBox(height: 14),
               Semantics(header: true, child: Text('Recuperar senha', style: t.titulo(26))),
               const SizedBox(height: 12),
@@ -99,6 +93,7 @@ class _RecuperarSenhaState extends State<_RecuperarSenha> {
                   rotulo: 'E-mail',
                   controller: _email,
                   dica: 'nome@exemplo.com',
+                  limite: LimiteCampo.email,
                   teclado: TextInputType.emailAddress,
                   autofill: const [AutofillHints.email],
                   acaoTeclado: TextInputAction.send,

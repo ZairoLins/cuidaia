@@ -7,6 +7,10 @@ import '../data/assistente.dart';
 
 enum FaseChat { livre, enviada, pensando, erro }
 
+/// Tamanho máximo de uma pergunta. Dúvidas reais cabem com folga; o limite
+/// impede que um texto enorme colado no campo gaste a cota da IA.
+const limiteCaracteresPergunta = 1000;
+
 final _aleatorio = Random();
 String _novoId() => '${DateTime.now().microsecondsSinceEpoch}-${_aleatorio.nextInt(1 << 30)}';
 
@@ -91,8 +95,9 @@ class ChatController extends ChangeNotifier {
   }
 
   void perguntar(String texto) {
-    final t = texto.trim();
+    var t = texto.trim();
     if (t.isEmpty || ocupado) return;
+    if (t.length > limiteCaracteresPergunta) t = t.substring(0, limiteCaracteresPergunta).trimRight();
     final msg = MsgUsuario(t);
     mensagens.add(msg);
     fase = FaseChat.enviada;

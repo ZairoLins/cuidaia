@@ -2,11 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Únicos tipos de endereço que o app abre: páginas seguras (fontes oficiais,
+/// mapa), o discador e o app de mapas. Qualquer outro é recusado.
+const esquemasPermitidos = {'https', 'tel', 'geo'};
+
+/// Se [url] é um endereço bem formado de um dos [esquemasPermitidos].
+bool linkPermitido(String url) {
+  final uri = Uri.tryParse(url.trim());
+  return uri != null && esquemasPermitidos.contains(uri.scheme.toLowerCase());
+}
+
 Future<void> abrirLink(BuildContext context, String url) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   var ok = false;
   try {
-    ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    ok = linkPermitido(url) && await launchUrl(Uri.parse(url.trim()), mode: LaunchMode.externalApplication);
   } catch (_) {
     ok = false;
   }

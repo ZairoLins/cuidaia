@@ -2,10 +2,19 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Reagendar os lembretes depois que o celular reinicia. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Segurança:
+         - sem backup na nuvem nem cópia entre aparelhos: a sessão e as
+           preferências ficam só neste aparelho (allowBackup vale até o
+           Android 11; dataExtractionRules, do Android 12 em diante);
+         - só conexões HTTPS (usesCleartextTraffic). -->
     <application
         android:label="CuidaIA"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

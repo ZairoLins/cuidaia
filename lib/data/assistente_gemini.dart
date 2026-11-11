@@ -39,7 +39,7 @@ class AssistenteGemini extends Assistente {
             'paragrafos': Schema.array(
               items: Schema.string(),
               minItems: 1,
-              maxItems: 4,
+              maxItems: maxParagrafosResposta,
               description: descricoesCampos['paragrafos'],
             ),
             'fonte': Schema.enumString(
@@ -93,7 +93,12 @@ class AssistenteGemini extends Assistente {
   static RespostaEducativa converter(String? texto) {
     if (texto == null || texto.trim().isEmpty) throw const FormatException('Resposta vazia do modelo');
     final json = jsonDecode(texto) as Map<String, dynamic>;
-    final paragrafos = (json['paragrafos'] as List).map((p) => '$p'.trim()).where((p) => p.isNotEmpty).toList();
+    // O esquema pede de 1 a 4 parágrafos; o corte vale mesmo se o modelo não obedecer.
+    final paragrafos = (json['paragrafos'] as List)
+        .map((p) => '$p'.trim())
+        .where((p) => p.isNotEmpty)
+        .take(maxParagrafosResposta)
+        .toList();
     if (paragrafos.isEmpty) throw const FormatException('Resposta sem texto');
     final fonte = fontesOficiais[json['fonte']] ?? fontesOficiais['ministerio']!;
     if (pedeEsclarecimento(json)) {

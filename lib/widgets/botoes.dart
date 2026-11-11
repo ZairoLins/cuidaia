@@ -307,6 +307,24 @@ class BotaoDestaque extends StatelessWidget {
   }
 }
 
+/// "Cancelar" discreto, abaixo do botão principal de um formulário: fecha a tela.
+class BotaoCancelar extends StatelessWidget {
+  const BotaoCancelar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () => Navigator.pop(context),
+      style: TextButton.styleFrom(
+        foregroundColor: CuidaCores.tinta,
+        minimumSize: const Size.fromHeight(48),
+        textStyle: context.tema.sans(15, peso: FontWeight.w600),
+      ),
+      child: const Text('Cancelar'),
+    );
+  }
+}
+
 /// Botão "voltar" de 44 px.
 class BotaoVoltar extends StatelessWidget {
   const BotaoVoltar({super.key, this.onPressed});

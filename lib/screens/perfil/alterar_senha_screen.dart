@@ -55,7 +55,7 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
     } on ErroConta catch (e) {
       if (!mounted) return;
       setState(() {
-        if (e.mensagem.contains('senha atual')) {
+        if (e.senhaAtualIncorreta) {
           _erroAtual = e.mensagem;
         } else {
           _erroServidor = e.mensagem;
@@ -161,27 +161,10 @@ class _AlterarSenhaScreenState extends State<AlterarSenhaScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (_erroServidor != null) ...[
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _erroServidor!,
-                      style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                if (_erroServidor != null) ...[MensagemErro(_erroServidor!), const SizedBox(height: 12)],
                 BotaoPrimario('Salvar nova senha', carregando: _salvando, onPressed: _salvar),
                 const SizedBox(height: 6),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: CuidaCores.tinta,
-                    minimumSize: const Size.fromHeight(48),
-                    textStyle: t.sans(15, peso: FontWeight.w600),
-                  ),
-                  child: const Text('Cancelar'),
-                ),
+                const BotaoCancelar(),
               ],
             ),
           ),

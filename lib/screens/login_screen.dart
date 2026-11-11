@@ -5,7 +5,7 @@ import '../state/app_state.dart';
 import '../theme/cuida_tema.dart';
 import '../widgets/widgets.dart';
 import 'cadastro_screen.dart';
-import 'home_shell.dart';
+import 'confirmar_email_screen.dart';
 import 'perfil/privacidade_screen.dart';
 import 'perfil/termos_screen.dart';
 import 'recuperar_senha.dart';
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await AppScope.read(context).entrar(_email.text, _senha.text);
       if (!mounted) return;
       TextInput.finishAutofillContext();
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+      abrirTelaDaSessao(context);
     } on ErroConta catch (e) {
       if (mounted) setState(() => _erroConta = e.mensagem);
     } finally {
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await AppScope.read(context).entrarComGoogle();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+      abrirTelaDaSessao(context);
     } on ErroConta catch (e) {
       if (mounted && !e.cancelado) setState(() => _erroConta = e.mensagem);
     } finally {
@@ -130,6 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         rotulo: 'E-mail',
                         controller: _email,
                         dica: 'nome@exemplo.com',
+                        limite: LimiteCampo.email,
                         teclado: TextInputType.emailAddress,
                         autofill: const [AutofillHints.email],
                         acaoTeclado: TextInputAction.next,

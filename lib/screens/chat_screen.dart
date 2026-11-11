@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/assistente.dart';
 import '../services/links.dart';
@@ -868,6 +869,7 @@ class _Entrada extends StatelessWidget {
                           maxLines: 4,
                           textInputAction: TextInputAction.send,
                           textCapitalization: TextCapitalization.sentences,
+                          inputFormatters: [LengthLimitingTextInputFormatter(limiteCaracteresPergunta)],
                           onSubmitted: (_) => onEnviar(),
                           style: t.sans(16),
                           decoration: InputDecoration(

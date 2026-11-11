@@ -45,6 +45,7 @@ class ContaFirebase implements Conta {
         nome: u.displayName ?? '',
         email: u.email ?? '',
         temSenha: u.providerData.any((p) => p.providerId == 'password'),
+        emailConfirmado: u.emailVerified,
       );
     }
   }
@@ -69,13 +70,27 @@ class ContaFirebase implements Conta {
   Future<Usuario> criar({required String nome, required String email, required String senha}) => _tratar(() async {
     final cred = await _auth.createUserWithEmailAndPassword(email: email.trim(), password: senha);
     final user = cred.user!;
-    final usuario = Usuario(nome: nome, apelido: nome.split(' ').first, email: user.email ?? email.trim());
+    final usuario = Usuario(
+      nome: nome,
+      apelido: nome.split(' ').first,
+      email: user.email ?? email.trim(),
+      emailConfirmado: false,
+    );
     await Future.wait([
       user.updateDisplayName(nome),
       _doc(user.uid).set({..._paraMapa(usuario), 'criadoEm': FieldValue.serverTimestamp()}),
     ]);
     await user.sendEmailVerification();
     return usuario;
+  });
+
+  @override
+  Future<void> reenviarConfirmacao() => _tratar(() => _user.sendEmailVerification());
+
+  @override
+  Future<bool> emailFoiConfirmado() => _tratar(() async {
+    await _user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
   });
 
   @override
@@ -134,7 +149,13 @@ class ContaFirebase implements Conta {
     if (dados == null) {
       // Primeiro login com o Google, ou falha de rede no cadastro: cria o perfil.
       final nome = user.displayName ?? '';
-      final u = Usuario(nome: nome, apelido: nome.split(' ').first, email: email, temSenha: temSenha);
+      final u = Usuario(
+        nome: nome,
+        apelido: nome.split(' ').first,
+        email: email,
+        temSenha: temSenha,
+        emailConfirmado: user.emailVerified,
+      );
       await _doc(user.uid).set({..._paraMapa(u), 'criadoEm': FieldValue.serverTimestamp()}, SetOptions(merge: true));
       return u;
     }
@@ -146,6 +167,7 @@ class ContaFirebase implements Conta {
       email: email,
       foto: foto is Blob ? foto.bytes : null,
       temSenha: temSenha,
+      emailConfirmado: user.emailVerified,
     );
   }
 
@@ -177,6 +199,7 @@ class ContaFirebase implements Conta {
     return switch (code) {
       'invalid-credential' || 'wrong-password' || 'user-not-found' || 'invalid-login-credentials' => ErroConta(
         senhaAtual ? 'A senha atual está incorreta.' : 'E-mail ou senha incorretos.',
+        senhaAtualIncorreta: senhaAtual,
       ),
       'invalid-email' => const ErroConta('Digite um e-mail válido, como nome@exemplo.com.'),
       'email-already-in-use' => const ErroConta('Já existe uma conta com este e-mail. Tente entrar.'),

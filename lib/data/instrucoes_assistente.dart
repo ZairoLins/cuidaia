@@ -63,6 +63,9 @@ const temperaturaAssistente = 0.3;
 /// raciocínio no padrão, o JSON saía cortado ("Unterminated string"). Raciocínio
 /// baixo + folga de tokens resolve; a resposta em si continua curta pela instrução.
 const maxTokensAssistente = 4096;
+
+/// Máximo de parágrafos de uma resposta, no esquema e na conversão do JSON.
+const maxParagrafosResposta = 4;
 const nivelRaciocinio = 'LOW';
 
 final instrucoesAssistente =
@@ -113,7 +116,7 @@ final esquemaRespostaRest = <String, Object>{
       'type': 'ARRAY',
       'items': {'type': 'STRING'},
       'minItems': 1,
-      'maxItems': 4,
+      'maxItems': maxParagrafosResposta,
       'description': descricoesCampos['paragrafos']!,
     },
     'fonte': {

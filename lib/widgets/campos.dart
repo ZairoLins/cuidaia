@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/cuida_tema.dart';
 
@@ -24,7 +25,11 @@ class CuidaCampo extends StatelessWidget {
     this.acaoTeclado,
     this.aoEnviar,
     this.somenteLeitura = false,
+    this.limite,
   });
+
+  /// Máximo de caracteres aceitos. A digitação e a colagem param no limite.
+  final int? limite;
 
   /// Mostra o valor sem permitir edição (ex.: e-mail de quem entra com o Google).
   final bool somenteLeitura;
@@ -100,6 +105,7 @@ class CuidaCampo extends StatelessWidget {
             autocorrect: !oculto,
             keyboardType: teclado,
             autofillHints: autofill,
+            inputFormatters: limite == null ? null : [LengthLimitingTextInputFormatter(limite)],
             onChanged: onChanged,
             textInputAction: acaoTeclado,
             onSubmitted: aoEnviar,
@@ -218,3 +224,19 @@ List<RequisitoSenha> requisitosSenha(String senha) => [
 
 final _regexEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
 bool emailValido(String email) => _regexEmail.hasMatch(email.trim());
+
+/// Tamanhos máximos dos campos. Os do perfil são os mesmos de `firestore.rules`:
+/// o campo para de aceitar texto antes de o banco recusar a gravação.
+abstract final class LimiteCampo {
+  static const nome = 120;
+  static const apelido = 60;
+  static const email = 254;
+}
+
+final _espacos = RegExp(r'\s+');
+
+/// Nome sem espaços nas pontas e com um só espaço entre as palavras.
+String normalizarNome(String nome) => nome.trim().replaceAll(_espacos, ' ');
+
+/// Nome e sobrenome: pelo menos duas palavras.
+bool nomeCompletoValido(String nome) => normalizarNome(nome).split(' ').length >= 2;

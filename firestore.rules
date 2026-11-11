@@ -6,10 +6,18 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /usuarios/{uid} {
-      allow read, delete: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null
-        && request.auth.uid == uid
-        && perfilValido(request.resource.data);
+      allow read, delete: if ehDono(uid);
+      // A data de criação é a do servidor e não muda depois.
+      allow create: if ehDono(uid)
+        && perfilValido(request.resource.data)
+        && (!('criadoEm' in request.resource.data) || request.resource.data.criadoEm == request.time);
+      allow update: if ehDono(uid)
+        && perfilValido(request.resource.data)
+        && request.resource.data.get('criadoEm', null) == resource.data.get('criadoEm', null);
+    }
+
+    function ehDono(uid) {
+      return request.auth != null && request.auth.uid == uid;
     }
 
     function perfilValido(d) {

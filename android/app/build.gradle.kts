@@ -28,7 +28,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "br.com.cuidaia.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -43,7 +42,7 @@ android {
     }
 
     // Chave de upload em android/key.properties + app/upload-keystore.jks (fora do git).
-    // Sem esses arquivos, o release é assinado com a chave de debug.
+    // Sem esses arquivos, o build de release é recusado (veja o fim deste arquivo).
     signingConfigs {
         if (chaveRelease.exists()) {
             create("release") {
@@ -75,4 +74,22 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+// Um release assinado com a chave de debug instala, mas não serve para
+// distribuir: o login com Google e o Play Integrity dependem da chave certa.
+// Por isso, sem a chave de upload, o build de release para com um aviso claro
+// em vez de gerar um pacote que parece pronto.
+gradle.taskGraph.whenReady {
+    val pedeRelease = allTasks.any {
+        it.project == project && (it.name.startsWith("assemble") || it.name.startsWith("bundle")) &&
+            it.name.endsWith("Release")
+    }
+    if (pedeRelease && !chaveRelease.exists()) {
+        throw GradleException(
+            "Build de release sem chave de assinatura: crie android/key.properties e " +
+                "android/app/upload-keystore.jks (veja docs/publicacao.md). " +
+                "Para testar sem a chave, use o modo debug (flutter run / flutter build apk --debug)."
+        )
+    }
 }

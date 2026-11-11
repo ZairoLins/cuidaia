@@ -23,6 +23,9 @@ const _recaptchaWeb = String.fromEnvironment(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Na versão publicada, nada do app vai para o log do aparelho (logcat) nem
+  // para o console do navegador: códigos de erro só interessam em desenvolvimento.
+  if (kReleaseMode) debugPrint = (String? message, {int? wrapWidth}) {};
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await _ativarAppCheck();
 
@@ -49,7 +52,7 @@ Future<void> main() async {
 
 /// Toque no lembrete "Continuar leitura": abre o artigo. A dica semanal só abre o app.
 void _abrirLembrete(AppState estado, String payload) {
-  if (!estado.logado || !payload.startsWith('leitura:')) return;
+  if (!estado.liberado || !payload.startsWith('leitura:')) return;
   final topico = payload.substring('leitura:'.length);
   final artigo = artigos[topico];
   if (artigo == null) return;

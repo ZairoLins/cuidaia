@@ -3,7 +3,14 @@ import 'package:flutter/foundation.dart';
 /// Dados do perfil. Nenhuma informação de saúde fica aqui.
 @immutable
 class Usuario {
-  const Usuario({required this.nome, this.apelido = '', required this.email, this.foto, this.temSenha = true});
+  const Usuario({
+    required this.nome,
+    this.apelido = '',
+    required this.email,
+    this.foto,
+    this.temSenha = true,
+    this.emailConfirmado = true,
+  });
 
   static const vazio = Usuario(nome: '', email: '');
 
@@ -14,6 +21,10 @@ class Usuario {
   /// `false` quando a pessoa entra só com o Google: não há senha para alterar
   /// nem para confirmar, e o e-mail é o da conta Google.
   final bool temSenha;
+
+  /// `false` enquanto a pessoa não abre o link enviado no cadastro. Até lá, o
+  /// app mostra só a tela "Confirme seu e-mail". Contas Google já vêm confirmadas.
+  final bool emailConfirmado;
 
   /// Foto pequena (JPEG até 256 px), guardada no próprio perfil.
   final Uint8List? foto;
@@ -37,12 +48,21 @@ class Usuario {
     email: email ?? this.email,
     foto: semFoto ? null : (foto ?? this.foto),
     temSenha: temSenha,
+    emailConfirmado: emailConfirmado,
   );
+
+  Usuario comEmailConfirmado() =>
+      Usuario(nome: nome, apelido: apelido, email: email, foto: foto, temSenha: temSenha);
 }
 
 /// Falha de conta com mensagem pronta para mostrar na tela.
 class ErroConta implements Exception {
-  const ErroConta(this.mensagem, {this.precisaSenha = false, this.cancelado = false});
+  const ErroConta(
+    this.mensagem, {
+    this.precisaSenha = false,
+    this.cancelado = false,
+    this.senhaAtualIncorreta = false,
+  });
 
   /// A pessoa fechou a janela do Google: não há o que mostrar.
   const ErroConta.cancelado() : this('', cancelado: true);
@@ -52,6 +72,9 @@ class ErroConta implements Exception {
 
   /// A operação exige confirmar a senha de novo (login recente).
   final bool precisaSenha;
+
+  /// Na troca de senha, a senha atual não confere: o erro aparece nesse campo.
+  final bool senhaAtualIncorreta;
 
   @override
   String toString() => mensagem;
@@ -70,6 +93,12 @@ abstract class Conta {
 
   /// Cria a conta e envia o e-mail de confirmação.
   Future<Usuario> criar({required String nome, required String email, required String senha});
+
+  /// Envia de novo o link de confirmação para o e-mail da conta.
+  Future<void> reenviarConfirmacao();
+
+  /// Pergunta ao servidor se o e-mail já foi confirmado.
+  Future<bool> emailFoiConfirmado();
 
   Future<void> recuperarSenha(String email);
 
@@ -124,11 +153,26 @@ class ContaMemoria implements Conta {
   Future<Usuario> criar({required String nome, required String email, required String senha}) async {
     final chave = email.trim().toLowerCase();
     if (_contas.containsKey(chave)) throw const ErroConta('Já existe uma conta com este e-mail.');
-    final u = Usuario(nome: nome, apelido: nome.split(' ').first, email: chave);
+    final u = Usuario(nome: nome, apelido: nome.split(' ').first, email: chave, emailConfirmado: false);
     _contas[chave] = (senha, u);
     _logado = chave;
     return u;
   }
+
+  /// Quantas vezes o link de confirmação foi reenviado.
+  int reenviosConfirmacao = 0;
+
+  /// Simula a pessoa abrir o link de confirmação no e-mail.
+  void confirmarEmail(String email) {
+    final conta = _contas[email]!;
+    _contas[email] = (conta.$1, conta.$2.comEmailConfirmado());
+  }
+
+  @override
+  Future<void> reenviarConfirmacao() async => reenviosConfirmacao++;
+
+  @override
+  Future<bool> emailFoiConfirmado() async => _contas[_logado]?.$2.emailConfirmado ?? false;
 
   @override
   Future<void> recuperarSenha(String email) async => emailsRecuperacao.add(email);
@@ -136,7 +180,9 @@ class ContaMemoria implements Conta {
   @override
   Future<void> alterarSenha({required String atual, required String nova}) async {
     final conta = _contas[_logado];
-    if (conta == null || conta.$1 != atual) throw const ErroConta('A senha atual está incorreta.');
+    if (conta == null || conta.$1 != atual) {
+      throw const ErroConta('A senha atual está incorreta.', senhaAtualIncorreta: true);
+    }
     _contas[_logado!] = (nova, conta.$2);
   }
 

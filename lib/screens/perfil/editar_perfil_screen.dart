@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../state/app_state.dart';
-import '../../theme/cuida_tema.dart';
 import '../../widgets/widgets.dart';
 
 class EditarPerfilScreen extends StatefulWidget {
@@ -82,9 +81,9 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   Future<void> _salvar() async {
     if (_salvando) return;
     FocusScope.of(context).unfocus();
-    final nome = _nome.text.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final nome = normalizarNome(_nome.text);
     final email = _email.text.trim();
-    if (nome.split(' ').length < 2) {
+    if (!nomeCompletoValido(nome)) {
       setState(() => _erro = 'Informe nome e sobrenome.');
       return;
     }
@@ -120,7 +119,6 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tema;
     final iniciais = Usuario(nome: _nome.text, email: '').iniciais;
     return TelaInterna(
       titulo: 'Editar perfil',
@@ -157,6 +155,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         CuidaCampo(
           rotulo: 'Nome completo',
           controller: _nome,
+          limite: LimiteCampo.nome,
           autofill: const [AutofillHints.name],
           onChanged: (v) {
             _mudou(v);
@@ -167,6 +166,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
           rotulo: 'Como prefere ser chamada(o)?',
           rotuloOpcional: true,
           controller: _apelido,
+          limite: LimiteCampo.apelido,
           dica: 'Ex.: Maria',
           ajuda: 'Aparece na saudação da página inicial.',
           onChanged: _mudou,
@@ -174,6 +174,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         CuidaCampo(
           rotulo: 'E-mail',
           controller: _email,
+          limite: LimiteCampo.email,
           teclado: TextInputType.emailAddress,
           autofill: const [AutofillHints.email],
           somenteLeitura: !AppScope.of(context).usuario.temSenha,
@@ -185,27 +186,10 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_erro != null) ...[
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  _erro!,
-                  style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            if (_erro != null) ...[MensagemErro(_erro!), const SizedBox(height: 12)],
             BotaoPrimario('Salvar alterações', carregando: _salvando, onPressed: _salvar),
             const SizedBox(height: 6),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                foregroundColor: CuidaCores.tinta,
-                minimumSize: const Size.fromHeight(48),
-                textStyle: t.sans(15, peso: FontWeight.w600),
-              ),
-              child: const Text('Cancelar'),
-            ),
+            const BotaoCancelar(),
           ],
         ),
       ],

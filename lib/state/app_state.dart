@@ -159,6 +159,10 @@ class AppState extends ChangeNotifier {
   bool get logado => _usuario != null;
   Usuario get usuario => _usuario ?? Usuario.vazio;
 
+  /// Sessão ativa e e-mail confirmado: só assim o app abre além da tela
+  /// "Confirme seu e-mail".
+  bool get liberado => logado && usuario.emailConfirmado;
+
   late ChatController _chat;
   ChatController get chat => _chat;
 
@@ -187,6 +191,19 @@ class AppState extends ChangeNotifier {
   /// Refaz a fila da dica semanal (as datas e o rodízio andam com o tempo).
   void _reagendar() {
     if (notificacao('dica')) _lembretes.agendarDicas().catchError((Object e) => debugPrint('Lembretes: $e'));
+  }
+
+  Future<void> reenviarConfirmacao() => _conta.reenviarConfirmacao();
+
+  /// Confere no servidor se o link de confirmação já foi aberto e, se foi,
+  /// libera o app. Retorna se o e-mail está confirmado.
+  Future<bool> verificarConfirmacao() async {
+    if (!logado) return false;
+    if (usuario.emailConfirmado) return true;
+    if (!await _conta.emailFoiConfirmado()) return false;
+    _usuario = usuario.comEmailConfirmado();
+    notifyListeners();
+    return true;
   }
 
   Future<void> recuperarSenha(String email) => _conta.recuperarSenha(email);

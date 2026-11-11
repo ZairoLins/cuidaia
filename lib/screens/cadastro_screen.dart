@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme/cuida_tema.dart';
 import '../widgets/widgets.dart';
-import 'home_shell.dart';
+import 'confirmar_email_screen.dart';
 import 'perfil/privacidade_screen.dart';
 import 'perfil/termos_screen.dart';
 
@@ -34,7 +34,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     super.dispose();
   }
 
-  bool get _nomeOk => _nome.text.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).length >= 2;
+  bool get _nomeOk => nomeCompletoValido(_nome.text);
   bool get _emailOk => emailValido(_email.text);
   List<RequisitoSenha> get _reqs => requisitosSenha(_senha.text);
   bool get _senhaOk => _reqs.every((r) => r.ok);
@@ -53,7 +53,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     setState(() => _enviando = true);
     try {
       await AppScope.read(context).criarConta(
-        nome: _nome.text.trim().replaceAll(RegExp(r'\s+'), ' '),
+        nome: normalizarNome(_nome.text),
         email: _email.text.trim(),
         senha: _senha.text,
       );
@@ -65,9 +65,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     }
   }
 
-  void _comecar() {
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const HomeShell()), (_) => false);
-  }
+  void _comecar() => abrirTelaDaSessao(context);
 
   void _abrir(Widget tela) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => tela));
 
@@ -115,9 +113,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
             const SizedBox(height: 14),
             Text('Conta criada', style: t.titulo(20, lh: 26)),
             const SizedBox(height: 14),
-            Text('Enviamos um link de confirmação para ${_email.text.trim()}.', style: t.sans(15, lh: 23, cor: t.mut)),
+            Text(
+              'Enviamos um link de confirmação para ${_email.text.trim()}. Abra o link para começar a usar o app.',
+              style: t.sans(15, lh: 23, cor: t.mut),
+            ),
             const SizedBox(height: 20),
-            BotaoPrimario('Começar', onPressed: _comecar),
+            BotaoPrimario('Continuar', onPressed: _comecar),
           ],
         ),
       ),
@@ -150,6 +151,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             rotulo: 'Nome completo',
             controller: _nome,
             dica: 'Como está no seu documento',
+            limite: LimiteCampo.nome,
             autofill: const [AutofillHints.name],
             acaoTeclado: TextInputAction.next,
             erro: e.nome ? 'Informe nome e sobrenome.' : null,
@@ -161,6 +163,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             rotulo: 'E-mail',
             controller: _email,
             dica: 'nome@exemplo.com',
+            limite: LimiteCampo.email,
             teclado: TextInputType.emailAddress,
             autofill: const [AutofillHints.email],
             acaoTeclado: TextInputAction.next,
@@ -235,13 +238,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             ),
           const SizedBox(height: 24),
           if (_erroServidor != null) ...[
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                _erroServidor!,
-                style: t.sans(14, lh: 21, peso: FontWeight.w500, cor: CuidaCores.erro),
-              ),
-            ),
+            MensagemErro(_erroServidor!),
             const SizedBox(height: 12),
           ],
           BotaoPrimario('Criar conta', carregando: _enviando, onPressed: _enviar),
